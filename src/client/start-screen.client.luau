@@ -43,7 +43,7 @@ end
 local function hideUI()
     pcall(function()
         StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
-        StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+        -- Removido PlayerList para evitar conflito com GuiService
     end)
 end
 
@@ -51,7 +51,7 @@ end
 local function showUI()
     pcall(function()
         StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)
-        StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
+        -- Removido PlayerList para evitar conflito com GuiService
     end)
 end
 
