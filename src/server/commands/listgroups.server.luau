@@ -1,13 +1,10 @@
-local RegisterCommand = require(game.ReplicatedStorage.Shared['register-command'])
+local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"])
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DataStoreService = game:GetService("DataStoreService")
 
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
-local cache = {
-    player = {}
-}
-local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)(cache.player)
-
+local STORAGE_DEFINITIONS = require(game.ReplicatedStorage.Shared.storage)
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
 
 -- Criar RemoteEvent para enviar mensagens do chat
@@ -18,9 +15,19 @@ if not chatMessageEvent then
     chatMessageEvent.Parent = ReplicatedStorage
 end
 
+-- Função para buscar grupos de um jogador (online ou offline)
+local function getPlayerGroups(userId)
+    local groupStorage = DataStoreService:GetDataStore(STORAGE_DEFINITIONS.group)
+    local success, groups = pcall(function()
+        return groupStorage:GetAsync(userId)
+    end)
+    
+    return success and groups or {}
+end
+
 RegisterCommand({
     name = "listgroups",
-    description = "Lista os grupos de um jogador",
+    description = "Lista os grupos de um jogador (online ou offline)",
     aliases = { "lg" },
     permissions = { "owner", "admin" }
 }, function(player, params, message)
@@ -43,17 +50,14 @@ RegisterCommand({
 
     -- Verificar se o usuário está online
     local targetPlayer = Players:GetPlayerByUserId(targetUserId)
-    if not targetPlayer then
-        print("Erro: Usuário \"" .. username .. "\" não está online!")
-        return
-    end
-
-    -- Obter dados do player alvo
-    local targetPlayerData, targetPlayerClass = PlayerModule.get(targetPlayer, true)
+    local isOnline = targetPlayer ~= nil
+    
+    -- Buscar grupos do jogador (funciona mesmo se estiver offline)
+    local playerGroups = getPlayerGroups(targetUserId)
     
     -- Coletar grupos do jogador
     local groupsList = {}
-    for groupName, hasGroup in pairs(targetPlayerData.groups) do
+    for groupName, hasGroup in pairs(playerGroups) do
         if hasGroup and GROUPS_CONFIG[groupName] then
             local groupData = GROUPS_CONFIG[groupName]
             table.insert(groupsList, groupData.name)
@@ -62,10 +66,12 @@ RegisterCommand({
     
     -- Criar mensagem para o chat
     local chatMessage
+    local statusText = isOnline and " (Online)" or " (Offline)"
+    
     if #groupsList > 0 then
-        chatMessage = "Grupos de " .. username .. ": " .. table.concat(groupsList, ", ")
+        chatMessage = "Grupos de " .. username .. statusText .. ": " .. table.concat(groupsList, ", ")
     else
-        chatMessage = "Grupos de " .. username .. ": Nenhum"
+        chatMessage = "Grupos de " .. username .. statusText .. ": Nenhum"
     end
     
     -- Enviar mensagem para o cliente via RemoteEvent
@@ -73,8 +79,9 @@ RegisterCommand({
     
     -- Também imprimir no console para debug
     print("=== GRUPOS DE " .. username .. " ===")
-    print("UserID:", targetPlayer.UserId)
-    print("É criador:", targetPlayer.UserId == game.CreatorId)
+    print("UserID:", targetUserId)
+    print("Status:", isOnline and "Online" or "Offline")
+    print("É criador:", targetUserId == game.CreatorId)
     print("Grupos:", chatMessage)
     print("================================")
 end)
