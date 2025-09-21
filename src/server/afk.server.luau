@@ -41,7 +41,7 @@ local function createAFKPart(player)
     zzzPart.Name = "zzz_" .. player.Name
     zzzPart.Transparency = 1
     zzzPart.CanCollide = false
-    zzzPart.Anchored = true -- Ancorada para melhor performance
+    zzzPart.Anchored = false -- Ancorada para melhor performance
     zzzPart.CFrame = rootPart.CFrame * CFrame.new(0, 4, 0)
     zzzPart.Parent = workspace
     
