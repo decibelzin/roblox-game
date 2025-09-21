@@ -34,4 +34,4 @@ player.CharacterAdded:Connect(function()
     remoteEvent:FireServer("AFK_END")
 end)
 
-print("�� AFK Client iniciado")
+print("�� AFK Client iniciado!")
