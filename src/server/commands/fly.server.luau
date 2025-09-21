@@ -28,12 +28,26 @@ local function setFlyingState(player, flying, speed)
     print(player.Name .. (flying and " iniciou" or " parou") .. " o voo" .. (flying and " com velocidade " .. (speed or DEFAULT_SPEED) or ""))
 end
 
+local function setAllFlying(flying, speed)
+    for _, player in pairs(Players:GetPlayers()) do
+        setFlyingState(player, flying, speed)
+    end
+end
+
 local function parseCommand(player, params)
     local targetPlayer = player
     local speed = DEFAULT_SPEED
     
     if #params > 0 then
         local firstParam = params[1]
+        
+        if firstParam:lower() == "all" then
+            speed = tonumber(params[2]) or DEFAULT_SPEED
+            setAllFlying(true, speed)
+            print("Voo ativado para todos os jogadores com velocidade " .. speed)
+            return
+        end
+        
         local targetPlayerName = Players:FindFirstChild(firstParam)
         
         if targetPlayerName then
@@ -56,6 +70,6 @@ end)
 
 RegisterCommand({
     name = "fly",
-    description = "Ativa/desativa o modo de voo [jogador] [velocidade]",
+    description = "Ativa/desativa o modo de voo [jogador/all] [velocidade]",
     aliases = {"f", "noclip"}
 }, parseCommand)
