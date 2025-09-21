@@ -1,7 +1,6 @@
 local STORAGE_KEY = require(game.ReplicatedStorage.Shared.storage).group
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
-
 local storage = game:GetService("DataStoreService"):GetDataStore(STORAGE_KEY)
 
 --- isso aqui verifica se um grupo é valido
@@ -28,7 +27,7 @@ local function isAlreadyAffiliated(userGroups: {[string]: boolean}, group: strin
     return false
 end
 
-local function createMethods(cache: PLAYER_DEFINITION.DefPlayerSchema)
+return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
     local self = {}
 
     function self.add(group: string)
@@ -91,9 +90,3 @@ local function createMethods(cache: PLAYER_DEFINITION.DefPlayerSchema)
 
     return self
 end
-
-return {
-    new = function(cache: PLAYER_DEFINITION.DefPlayerSchema)
-       return createMethods(cache)
-    end
-}

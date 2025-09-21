@@ -1,11 +1,11 @@
 local types = require(game.ReplicatedStorage.Shared.types["player.types"])
-local GroupClass = require('./group')
+local GroupModule = require('./group')
 local Class = {}
 
 function Class.new(cache: types.DefPlayerSchema)
     local self = {}
 
-    self.group = GroupClass.new(cache)
+    self.group = GroupModule(cache)
 
     return cache, self
 end
