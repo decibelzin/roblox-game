@@ -21,11 +21,13 @@ RegisterCommand({
         return Players:GetHumanoidDescriptionFromUserId(userId)
     end)
 
+    if (not success) then
+        return
+    end
+
     local myHumanoid = player.Character.Humanoid
 
     myHumanoid:ApplyDescription(description)
 
     print('skin copiada com sucesso')
-
-    
 end)
