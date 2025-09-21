@@ -1,18 +1,76 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared['register-command'])
+local Players = game:GetService("Players")
+
+-- Importar o módulo de player para gerenciar grupos
+local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
+local cache = {
+    player = {} :: {[number]: PLAYER_DEFINITION.DefPlayerSchema}
+}
+local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)(cache.player)
+
+-- Função para verificar se o jogador é owner do jogo
+local function isGameOwner(player: Player): boolean
+    local success, result = pcall(function()
+        return player:GetRankInGroup(game.CreatorId)
+    end)
+    
+    if not success then
+        return false
+    end
+    
+    -- Rank 255 = Owner do grupo do jogo
+    return result >= 255
+end
 
 RegisterCommand({
     name = "group",
-    description = "",
-    aliases = {"g"},
-    permissions = {'owner', 'admin', 'moderator', 'vip-gold'}
+    description = "Dá um grupo para um usuário",
+    aliases = { "g" },
+    permissions = { 'owner', 'admin', 'moderator', 'vip-gold' }
 }, function(player, params, message)
-    local group = params[1]
-    local user = params[2]
+    local username = params[1]
+    local group = params[2]
 
-    if (not group) then
+    -- Verificar se os parâmetros foram fornecidos
+    if not username or not group then
+        print("Uso: /group <username> <group>")
+        print("Grupos disponíveis: owner, admin, moderator, vip-gold")
         return
     end
-    
-    
 
+    -- Verificar se está tentando definir o grupo "owner"
+    if group == "owner" and not isGameOwner(player) then
+        print("Erro: Apenas o owner do jogo pode definir o grupo 'owner'!")
+        return
+    end
+
+    -- Buscar o usuário pelo nome
+    local success, targetUserId = pcall(function()
+        return Players:GetUserIdFromNameAsync(username)
+    end)
+
+    if not success then
+        print("Erro: Usuário '" .. username .. "' não encontrado!")
+        return
+    end
+
+    -- Verificar se o usuário está online
+    local targetPlayer = Players:GetPlayerByUserId(targetUserId)
+    if not targetPlayer then
+        print("Erro: Usuário '" .. username .. "' não está online!")
+        return
+    end
+
+    -- Obter dados do player alvo
+    local targetPlayerData, targetPlayerClass = PlayerModule.get(targetPlayer, true)
+    
+    -- Tentar adicionar o grupo
+    local addSuccess = targetPlayerClass.group.add(group)
+    
+    if addSuccess then
+        print("Grupo '" .. group .. "' adicionado com sucesso para " .. username .. "!")
+    else
+        print("Erro: Falha ao adicionar grupo '" .. group .. "' para " .. username .. "!")
+        print("Verifique se o grupo existe e se o usuário não possui um grupo da mesma organização.")
+    end
 end)
