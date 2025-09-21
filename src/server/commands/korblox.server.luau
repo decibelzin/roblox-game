@@ -2,6 +2,7 @@ local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"
 
 local Players = game:GetService("Players")
 
+local originalLegs = {}
 RegisterCommand({
     name = "korblox",
     description = "usar korblox",
@@ -12,15 +13,20 @@ RegisterCommand({
     end
 
     local humanoid = player.Character.Humanoid
-    
-    -- Obter a descrição atual do humanoid
     local humanoidDescription = humanoid:GetAppliedDescription()
     
-    -- Aplicar o Korblox Deathspeaker Right Leg usando o ID do asset
-    humanoidDescription.RightLeg = 139607718 -- ID do Korblox Deathspeaker Right Leg
+    if humanoidDescription.RightLeg == 139607718 then
+        if originalLegs[player.UserId] then
+            humanoidDescription.RightLeg = originalLegs[player.UserId]
+        else
+            humanoidDescription.RightLeg = 0
+        end
+        print("Perna original restaurada para " .. player.Name)
+    else
+        originalLegs[player.UserId] = humanoidDescription.RightLeg
+        humanoidDescription.RightLeg = 139607718
+        print("Korblox Deathspeaker Right Leg aplicado para " .. player.Name)
+    end
     
-    -- Aplicar a nova descrição
     humanoid:ApplyDescription(humanoidDescription)
-    
-    print("Korblox Deathspeaker Right Leg aplicado com sucesso para " .. player.Name)
 end)
