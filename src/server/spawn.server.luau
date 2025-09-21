@@ -1,4 +1,5 @@
 local players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Importar o módulo de player para acessar os grupos
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
@@ -9,6 +10,14 @@ local PlayerModule = require(game.ServerScriptService.Server.framework.modules.p
 
 -- Importar configurações de grupos
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
+
+-- Criar RemoteEvent para enviar mensagens do chat
+local chatMessageEvent = ReplicatedStorage:FindFirstChild("ChatMessageEvent")
+if not chatMessageEvent then
+    chatMessageEvent = Instance.new("RemoteEvent")
+    chatMessageEvent.Name = "ChatMessageEvent"
+    chatMessageEvent.Parent = ReplicatedStorage
+end
 
 -- Função para verificar se o jogador é o criador do jogo
 local function isGameCreator(player)
@@ -47,6 +56,15 @@ local function listPlayerGroups(playerGroups)
         end
     end
     return groups
+end
+
+-- Função para verificar se o jogador tem permissão de staff
+local function isStaff(player)
+    local playerData, playerClass = PlayerModule.get(player, true)
+    local highestGroup = getHighestGroup(playerData.groups)
+    
+    -- Verificar se é owner ou admin
+    return highestGroup == "owner" or highestGroup == "admin"
 end
 
 players.PlayerAdded:Connect(function(player)
@@ -102,6 +120,17 @@ players.PlayerAdded:Connect(function(player)
             print("📋 Todos os grupos:", table.concat(allGroups, ", "))
         else
             print("📋 Sem grupos atribuídos")
+        end
+        
+        -- Verificar se é staff e enviar mensagem no chat
+        if isStaff(player) then
+            local groupData = GROUPS_CONFIG[highestGroup]
+            local groupName = groupData and groupData.name or highestGroup
+            local chatMessage = "👑 " .. player.Name .. " (" .. groupName .. ") entrou no jogo!"
+            
+            -- Enviar mensagem para todos os clientes
+            chatMessageEvent:FireAllClients(chatMessage)
+            print("📢 Mensagem de staff enviada:", chatMessage)
         end
         
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
