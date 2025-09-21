@@ -1,4 +1,5 @@
 local service = game:GetService("TextChatService")
+local Players = game:GetService("Players")
 
 type DefCommand = {
     name: string,
@@ -6,7 +7,7 @@ type DefCommand = {
     aliases: {string}?
 }
 
-type DefCallback = (textSource: TextSource, params: {string}, message: string) -> ()
+type DefCallback = (player: Player, params: {string}, message: string) -> ()
 
 return function(definition: DefCommand, callback: DefCallback)
     local command = Instance.new("TextChatCommand")
@@ -23,6 +24,12 @@ return function(definition: DefCommand, callback: DefCallback)
         local params = message:split(" ")
         table.remove(params, 1)
 
-        callback(textSource, params, message)
+        local player = Players:GetPlayerByUserId(textSource.UserId)
+        
+        if player then
+            callback(player, params, message)
+        else
+            warn("Player não encontrado para UserId:", textSource.UserId)
+        end
     end)
 end
