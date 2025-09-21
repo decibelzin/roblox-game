@@ -2,31 +2,64 @@ local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"
 
 local Players = game:GetService("Players")
 
-local originalLegs = {}
-RegisterCommand({
-    name = "korblox",
-    description = "usar korblox",
-    aliases = {"korblox"}
-}, function(player, params, message)
-    if not player.Character or not player.Character:FindFirstChild("Humanoid") then
-        return
-    end
+local KORBLOX_LEG_ID = 139607718
 
-    local humanoid = player.Character.Humanoid
+local function EquipKorblox(character)
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
     local humanoidDescription = humanoid:GetAppliedDescription()
     
-    if humanoidDescription.RightLeg == 139607718 then
-        if originalLegs[player.UserId] then
-            humanoidDescription.RightLeg = originalLegs[player.UserId]
-        else
-            humanoidDescription.RightLeg = 0
-        end
-        print("Perna original restaurada para " .. player.Name)
+    if not humanoid:GetAttribute("OriginalRightLeg") then
+        humanoid:SetAttribute("OriginalRightLeg", humanoidDescription.RightLeg)
+    end
+    
+    humanoidDescription.RightLeg = KORBLOX_LEG_ID
+    humanoid:ApplyDescription(humanoidDescription)
+end
+
+local function RemoveKorblox(character)
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    local humanoidDescription = humanoid:GetAppliedDescription()
+    
+    local originalRightLeg = humanoid:GetAttribute("OriginalRightLeg")
+    if originalRightLeg and originalRightLeg ~= 0 then
+        humanoidDescription.RightLeg = originalRightLeg
     else
-        originalLegs[player.UserId] = humanoidDescription.RightLeg
-        humanoidDescription.RightLeg = 139607718
-        print("Korblox Deathspeaker Right Leg aplicado para " .. player.Name)
+        humanoidDescription.RightLeg = 0
     end
     
     humanoid:ApplyDescription(humanoidDescription)
+    humanoid:SetAttribute("OriginalRightLeg", nil)
+end
+
+RegisterCommand({
+    name = "korblox",
+    description = "Toggle - Alterna entre perna original e Korblox Deathspeaker Right Leg",
+    aliases = {"korblox"}
+}, function(player, params, message)
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    local humanoidDescription = humanoid:GetAppliedDescription()
+    local isKorblox = humanoidDescription.RightLeg == KORBLOX_LEG_ID
+    
+    if isKorblox then
+        RemoveKorblox(character)
+        humanoid:SetAttribute("Korblox", false)
+        print("Perna original restaurada para " .. player.Name)
+    else
+        EquipKorblox(character)
+        humanoid:SetAttribute("Korblox", true)
+        print("Korblox Deathspeaker Right Leg aplicado para " .. player.Name)
+    end
 end)
