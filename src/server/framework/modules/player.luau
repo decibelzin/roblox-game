@@ -5,7 +5,10 @@ local PlayerClass = require(game.ServerScriptService.Server.framework.classes.pl
 local storage = game:GetService("DataStoreService")
 local groupStorage = storage:GetDataStore(STORAGE_DEFINITIONS.group)
 
-return function(cache: {PLAYER_DEFINITION.DefPlayerSchema})
+local memory = require('../classes/cache')
+local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require('../classes/cache').new('player-data')
+
+return function()
     local self = {}
 
     function self.fetch(player: Player): PLAYER_DEFINITION.DefPlayerSchema
@@ -22,8 +25,10 @@ return function(cache: {PLAYER_DEFINITION.DefPlayerSchema})
     end
 
     function self.get(player: Player, insertCache: boolean?)
-        if cache[player.UserId] then
-            return PlayerClass.new(cache[player.UserId])
+        local inCache = cache.get(player.UserId)
+
+        if inCache then
+            return PlayerClass.new(inCache)
         end
 
         local data = self.fetch(player)
@@ -32,8 +37,7 @@ return function(cache: {PLAYER_DEFINITION.DefPlayerSchema})
             return PlayerClass.new(data)
         end
 
-        cache[player.UserId] = data
-        return PlayerClass.new(cache[player.UserId])
+        return PlayerClass.new(cache.set(player.UserId, data))
     end
 
     return self
