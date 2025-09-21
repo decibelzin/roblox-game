@@ -11,26 +11,26 @@ local remoteEvent = ReplicatedStorage:WaitForChild("AFKDetection")
 
 -- Detectar mudanças de foco
 UserInputService.WindowFocused:Connect(function()
-    print("🟢 WindowFocused disparado!")
+    -- print("🟢 WindowFocused disparado!")
     if not isWindowFocused then
         isWindowFocused = true
-        print("📤 Enviando AFK_END para servidor")
+        -- print("📤 Enviando AFK_END para servidor")
         remoteEvent:FireServer("AFK_END")
     end
 end)
 
 UserInputService.WindowFocusReleased:Connect(function()
-    print("🔴 WindowFocusReleased disparado!")
+    -- print("🔴 WindowFocusReleased disparado!")
     if isWindowFocused then
         isWindowFocused = false
-        print("📤 Enviando AFK_START para servidor")
+        -- print("📤 Enviando AFK_START para servidor")
         remoteEvent:FireServer("AFK_START")
     end
 end)
 
 -- Limpar ao spawnar
 player.CharacterAdded:Connect(function()
-    print("🔄 CharacterAdded disparado!")
+    -- print("🔄 CharacterAdded disparado!")
     remoteEvent:FireServer("AFK_END")
 end)
 
