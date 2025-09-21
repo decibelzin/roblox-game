@@ -7,5 +7,3 @@ RegisterCommand({
 }, function(player, params, message)
     print(player, 'executeou o comando')
 end)
-
-print('oi')
