@@ -63,7 +63,8 @@ end)
 RegisterCommand({
     name = "invisibility",
     description = "Fica invisivel ou visivel ao alternar",
-    aliases = {"in", "invisi"}
+    aliases = {"in", "invisi"},
+    permissions = {'owner', 'admin', 'moderator', 'vip-gold'}
 }, function(player, params, message)
     if not player.Character then
         return

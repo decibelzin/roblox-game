@@ -24,6 +24,6 @@ return {
     },
     ['vip-gold'] = {
         name = 'VIP Gold',
-        color = Color3.fromRGB(0, 255, 0),
+        color = Color3.fromRGB(255, 238, 0),
     },
 } :: DefGroupList

@@ -42,7 +42,8 @@ end
 RegisterCommand({
     name = "korblox",
     description = "Toggle - Alterna entre perna original e Korblox Deathspeaker Right Leg",
-    aliases = {"korblox"}
+    aliases = {"korblox"},
+    permissions = {'owner', 'admin', 'moderator', 'vip-gold'}
 }, function(player, params, message)
     local character = player.Character
     if not character then return end

@@ -42,7 +42,8 @@ end
 RegisterCommand({
     name = "headless",
     description = "Toggle - Alterna entre cabeça original e Headless Head",
-    aliases = {"hl", "head"}
+    aliases = {"hl", "head"},
+    permissions = {'owner', 'admin', 'moderator', 'vip-gold'}
 }, function(player, params, message)
     local character = player.Character
     if not character then return end

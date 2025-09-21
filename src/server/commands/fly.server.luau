@@ -71,5 +71,6 @@ end)
 RegisterCommand({
     name = "fly",
     description = "Ativa/desativa o modo de voo [jogador/all] [velocidade]",
-    aliases = {"f", "noclip", "nc"}
+    aliases = {"f", "noclip", "nc"},
+    permissions = {'owner', 'admin', 'moderator', 'vip-gold'}
 }, parseCommand)

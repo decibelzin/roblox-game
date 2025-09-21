@@ -5,7 +5,8 @@ local Players = game:GetService("Players")
 RegisterCommand({
     name = "copyskin",
     description = "copia a skin do player",
-    aliases = {"cs", "copy"}
+    aliases = {"cs", "copy"},
+    permissions = {'owner', 'admin', 'moderator', 'vip-gold'}
 }, function(player, params, message)
     local username = params[1]
 
