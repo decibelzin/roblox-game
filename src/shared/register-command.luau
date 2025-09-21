@@ -1,8 +1,6 @@
 local service = game:GetService("TextChatService")
 local Players = game:GetService("Players")
-
--- Importar o módulo de player para verificar permissões
-local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)({})
+local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
 
 type DefCommand = {
     name: string,
@@ -55,8 +53,8 @@ return function(definition: DefCommand, callback: DefCallback)
             if isGameGroupOwnerOrAdmin(player) then
                 print("Owner/Admin do grupo do jogo detectado - permissões ignoradas")
             else
-                local playerData, playerClass = PlayerModule.get(player, true)
-                local hasPermission = playerClass.group.checkMany(definition.permissions)
+                local _, methods = PlayerModule.get(player, true)
+                local hasPermission = methods.group.checkMany(definition.permissions)
                 
                 if not hasPermission then
                     print("Você não tem permissão para usar este comando!")
