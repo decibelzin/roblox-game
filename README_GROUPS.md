@@ -1,6 +1,6 @@
 # Sistema de Grupos Seguro - Roblox
 
-Este sistema implementa um gerenciamento de grupos e permissões seguro usando RemoteEvents, garantindo que dados sensíveis nunca sejam expostos ao cliente.
+Este sistema implementa um gerenciamento de grupos e permissões seguro usando RemoteEvents, garantindo que dados sensíveis nunca sejam expostos ao cliente. Inclui suporte para permissões do Roblox (Owner, Group Admin) além dos grupos personalizados.
 
 ## 📁 Estrutura de Arquivos
 
@@ -71,10 +71,12 @@ local groupsWithInfo = GroupClient.getPlayerGroupsWithInfo()
 ## 📋 Comandos Disponíveis
 
 ### Comandos de Chat (apenas para quem tem permissão)
-- /group [nome] - Adicionar grupo ao player
-- /ungroup [nome] - Remover grupo do player
-- /groups - Listar grupos do player
-- /permissions - Listar permissões do player
+- /group [username] [grupo] - Adicionar grupo ao player especificado
+- /ungroup [username] [grupo] - Remover grupo do player especificado
+- /groups - Listar grupos do próprio player
+- /groups [username] - Listar grupos de outro player
+- /permissions - Listar permissões do próprio player
+- /permissions [username] - Listar permissões de outro player
 
 ### Comandos do Cliente
 - /mygroups - Mostrar grupos do player
@@ -83,27 +85,21 @@ local groupsWithInfo = GroupClient.getPlayerGroupsWithInfo()
 
 ## 🎯 Grupos Disponíveis
 
-### Admin
-- **Permissões**: canBan, canKick, canGiveItems, canTeleport, canManageGroups, canUseAdminCommands, canMute, canUnmute
-- **Cor**: Vermelho
-- **Prioridade**: 3
+### Grupos Especiais do Roblox
+- **Owner** - Dono do jogo (sempre tem todas as permissões)
+- **GroupAdmin** - Admin do grupo do jogo (sempre tem todas as permissões)
 
-### Moderator
-- **Permissões**: canKick, canMute, canUnmute, canUseModCommands
-- **Cor**: Verde
-- **Prioridade**: 2
-
-### Vip
-- **Permissões**: canUseVIPCommands, canUseVIPItems
-- **Cor**: Amarelo
-- **Prioridade**: 1
+### Grupos Personalizados
+- **Admin** - Permissões completas (ban, kick, gerenciar grupos, etc.)
+- **Moderator** - Permissões de moderação (kick, mute, etc.)
+- **Vip** - Permissões especiais (comandos VIP, itens especiais)
 
 ## 🔧 RemoteEvents
 
 ### GetPlayerGroups
 - **Tipo**: RemoteEvent
 - **Uso**: Cliente solicita grupos do player
-- **Resposta**: Lista de grupos do player
+- **Resposta**: Lista de grupos do player (incluindo grupos do Roblox)
 
 ### CheckPermission
 - **Tipo**: RemoteFunction
@@ -157,12 +153,64 @@ local function giveVIPItems()
 end
 `
 
+## 💡 Exemplos de Comandos
+
+### Gerenciar Grupos
+`
+/group Vitor Admin          # Dar grupo Admin para Vitor
+/ungroup Vitor Admin        # Remover grupo Admin de Vitor
+/group Player123 Moderator  # Dar grupo Moderator para Player123
+/ungroup Player123 Vip      # Remover grupo Vip de Player123
+`
+
+### Verificar Grupos e Permissões
+`
+/groups                     # Ver seus próprios grupos
+/groups Vitor              # Ver grupos do Vitor
+/permissions               # Ver suas próprias permissões
+/permissions Vitor         # Ver permissões do Vitor
+`
+
+## 🔐 Hierarquia de Permissões
+
+### 1. Owner (Dono do Jogo)
+- **Prioridade**: 5 (mais alta)
+- **Cor**: Dourado
+- **Permissões**: TODAS as permissões
+- **Como obter**: Ser o dono do jogo
+
+### 2. GroupAdmin (Admin do Grupo)
+- **Prioridade**: 4
+- **Cor**: Laranja
+- **Permissões**: TODAS as permissões
+- **Como obter**: Ser admin do grupo do jogo (rank >= 100)
+
+### 3. Admin (Grupo Personalizado)
+- **Prioridade**: 3
+- **Cor**: Vermelho
+- **Permissões**: canBan, canKick, canGiveItems, canTeleport, canManageGroups, canUseAdminCommands, canMute, canUnmute
+- **Como obter**: Comando /group [username] Admin
+
+### 4. Moderator (Grupo Personalizado)
+- **Prioridade**: 2
+- **Cor**: Verde
+- **Permissões**: canKick, canMute, canUnmute, canUseModCommands
+- **Como obter**: Comando /group [username] Moderator
+
+### 5. Vip (Grupo Personalizado)
+- **Prioridade**: 1
+- **Cor**: Amarelo
+- **Permissões**: canUseVIPCommands, canUseVIPItems
+- **Como obter**: Comando /group [username] Vip
+
 ## ⚠️ Importante
 
 1. **Nunca** coloque dados sensíveis em src/shared/
 2. **Sempre** valide permissões no servidor
 3. **Use** RemoteEvents para comunicação segura
 4. **Teste** todas as permissões antes de usar em produção
+5. **Apenas** players com permissão canManageGroups podem usar comandos de gerenciamento
+6. **Owner** e **GroupAdmin** sempre têm todas as permissões, independente dos grupos personalizados
 
 ## 🐛 Troubleshooting
 
@@ -180,8 +228,19 @@ end
 - Verifique se o player tem o grupo correto
 - Verifique se a permissão está definida em GroupPermissions.luau
 - Verifique se o RemoteEvent está funcionando
+- Verifique se o player é Owner ou GroupAdmin
 
 ### Dados não salvando
 - Verifique se o DataStore está configurado corretamente
 - Verifique se o player está sendo salvo ao sair
 - Verifique se há erros no console do servidor
+
+### Player não encontrado
+- Verifique se o username está correto
+- O sistema faz busca parcial (não precisa do nome completo)
+- Exemplo: /group Vit Admin encontrará "Vitor"
+
+### Owner/GroupAdmin não funcionando
+- Verifique se o game.CreatorId está configurado corretamente
+- Verifique se o player está no grupo correto
+- Verifique se o rank do player no grupo é >= 100
