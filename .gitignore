@@ -5,6 +5,6 @@
 /*.rbxlx.lock
 /*.rbxl.lock
 sourcemap.json
-*.rblxl
-aftman.toml
-*.rbxl
+/*.rblxl
+/aftman.toml
+/*.rbxl
