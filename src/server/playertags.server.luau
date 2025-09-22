@@ -1,14 +1,9 @@
 -- Sistema de Player Tags
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Importar módulos
-local PLAYER_DEFINITION = require(ReplicatedStorage.Shared.types["player.types"])
 local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)
 
--- Configurar cache
-local cache = { player = {} }
-local playerModule = PlayerModule(cache.player)
+local playerModule = PlayerModule()
 
 -- Criar RemoteEvent para sincronização de grupos
 local groupSyncEvent = ReplicatedStorage:FindFirstChild("GroupSyncEvent")
