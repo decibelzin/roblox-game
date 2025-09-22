@@ -14,7 +14,6 @@ local function checkInitialFocus()
     RunService.Heartbeat:Wait()
     isWindowFocused = UserInputService:GetFocusedTextBox() ~= nil or true 
     isInitialized = true
-    print("🎮 AFK Client inicializado! Estado inicial do foco:", isWindowFocused)
 end
 
 -- Detectar mudanças de foco
@@ -43,4 +42,3 @@ player.CharacterAdded:Connect(function()
 end)
 
 checkInitialFocus()
-print("🎮 AFK Client iniciado!")

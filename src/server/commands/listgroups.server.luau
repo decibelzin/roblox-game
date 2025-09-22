@@ -76,7 +76,6 @@ RegisterCommand({
     end)
 
     if not success then
-        print("Erro: Usuário \"" .. username .. "\" não encontrado!")
         return
     end
 
@@ -121,12 +120,4 @@ RegisterCommand({
     
     -- Enviar mensagem para o cliente via RemoteEvent
     chatMessageEvent:FireClient(player, chatMessage)
-    
-    -- Também imprimir no console para debug
-    print("=== GRUPOS DE " .. username .. " ===")
-    print("UserID:", targetUserId)
-    print("Status:", isOnline and "Online" or "Offline")
-    print("É criador:", targetUserId == game.CreatorId)
-    print("Grupos:", chatMessage)
-    print("================================")
 end)

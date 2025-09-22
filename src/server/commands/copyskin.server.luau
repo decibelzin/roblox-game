@@ -29,6 +29,4 @@ RegisterCommand({
     local myHumanoid = player.Character.Humanoid
 
     myHumanoid:ApplyDescription(description)
-
-    print('skin copiada com sucesso')
 end)

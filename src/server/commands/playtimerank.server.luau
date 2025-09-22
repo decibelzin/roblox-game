@@ -16,12 +16,6 @@ local function rankingCommand(player, params)
     end
     
     table.sort(players, function(a, b) return a.time > b.time end)
-    
-    print("🏆 Ranking:")
-    for i = 1, math.min(10, #players) do
-        local p = players[i]
-        print(string.format("   %d. %s - %s", i, p.name, PLAYTIME_MODULE.formatTime(p.time)))
-    end
 end
 
 local registerCommand = require(ReplicatedStorage.Shared["register-command"])

@@ -19,7 +19,6 @@ RegisterCommand({
     
     if success then
         humanoid:ApplyDescription(description)
-        print("Skin resetada com sucesso para " .. player.Name)
     else
         warn("Erro ao resetar skin para " .. player.Name)
     end

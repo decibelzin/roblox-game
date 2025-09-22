@@ -77,7 +77,6 @@ RegisterCommand({
         restoreOriginalTransparency(player)
         
         invisStates[player.UserId] = false
-        print(player.Name .. " agora está visível!")
     else
         storeOriginalTransparency(player)
         
@@ -99,6 +98,5 @@ RegisterCommand({
             end
         end
         invisStates[player.UserId] = true
-        print(player.Name .. " agora está invisível!")
     end
 end)

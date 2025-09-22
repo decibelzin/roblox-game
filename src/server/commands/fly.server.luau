@@ -25,7 +25,6 @@ local function setFlyingState(player, flying, speed)
     end
     
     flyStateEvent:FireClient(player, flying, speed or DEFAULT_SPEED)
-    print(player.Name .. (flying and " iniciou" or " parou") .. " o voo" .. (flying and " com velocidade " .. (speed or DEFAULT_SPEED) or ""))
 end
 
 local function setAllFlying(flying, speed)
@@ -44,7 +43,6 @@ local function parseCommand(player, params)
         if firstParam:lower() == "all" then
             speed = tonumber(params[2]) or DEFAULT_SPEED
             setAllFlying(true, speed)
-            print("Voo ativado para todos os jogadores com velocidade " .. speed)
             return
         end
         

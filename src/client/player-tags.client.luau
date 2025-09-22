@@ -55,10 +55,6 @@ local function updatePlayerTag(playerName, highestGroup, allGroups)
         label.TextStrokeTransparency = 0
         label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         label.Parent = frame
-        
-        print("🏷️ Tag atualizada para " .. playerName .. ": " .. highestGroup)
-    else
-        print("🏷️ Tag removida para " .. playerName)
     end
 end
 
@@ -74,5 +70,3 @@ Players.PlayerAdded:Connect(function(player)
         -- A sincronização será feita pelo servidor via GroupSyncEvent
     end)
 end)
-
-print("🏷️ Sistema de Player Tags (Cliente) iniciado!")

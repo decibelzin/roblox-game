@@ -13,9 +13,4 @@ chatMessageEvent.OnClientEvent:Connect(function(message)
     -- Exibir a mensagem no chat do jogo
     local textChannel = TextChatService.TextChannels.RBXGeneral
     textChannel:DisplaySystemMessage(message)
-    
-    -- Também imprimir no console do cliente para debug
-    print("📨 Mensagem do chat recebida:", message)
 end)
-
-print("✅ Sistema de mensagens do chat inicializado!")

@@ -57,10 +57,8 @@ RegisterCommand({
     if isKorblox then
         RemoveKorblox(character)
         humanoid:SetAttribute("Korblox", false)
-        print("Perna original restaurada para " .. player.Name)
     else
         EquipKorblox(character)
         humanoid:SetAttribute("Korblox", true)
-        print("Korblox Deathspeaker Right Leg aplicado para " .. player.Name)
     end
 end)

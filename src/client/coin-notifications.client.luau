@@ -141,5 +141,3 @@ player.CharacterAdded:Connect(function()
     end
 end)
 
-print("💰 Sistema de notificações de moedas iniciado!")
-
