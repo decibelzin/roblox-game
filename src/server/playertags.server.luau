@@ -113,14 +113,13 @@ spawn(function()
     syncAllPlayerGroups()
 end)
 
--- Sincronização de segurança (a cada 5 segundos)
+-- Sincronização de segurança (a cada 10 segundos)
 spawn(function()
     while true do
-        wait(5)
+        wait(10)
         print("🔄 Sincronização de segurança...")
         syncAllPlayerGroups()
     end
 end)
 
 print("🏷️ Sistema de Player Tags iniciado!")
-

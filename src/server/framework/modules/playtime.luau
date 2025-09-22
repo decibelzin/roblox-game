@@ -10,7 +10,8 @@ local playtimeStorage = DataStoreService:GetDataStore(STORAGE_DEFINITIONS.playti
 
 -- Configurações
 local SAVE_INTERVAL = 120 -- 2 minutos
-local COINS_PER_MINUTE = 1 -- 1 moeda por minuto jogado
+local COINS_PER_30_MINUTES = 20 -- 20 moedas a cada 30 minutos
+local COINS_CHECK_INTERVAL = 1800 -- 30 minutos em segundos
 local MILESTONE_BONUS = {
     [60] = 10,    -- 1 hora = 10 moedas extras
     [300] = 50,   -- 5 horas = 50 moedas extras
@@ -44,9 +45,9 @@ local function formatTime(seconds)
 end
 
 local function calculateCoinsEarned(sessionTime)
-    local minutes = sessionTime / 60
-    local baseCoins = math.floor(minutes * COINS_PER_MINUTE)
-    return baseCoins
+    -- Calcular quantos intervalos de 30 minutos foram completados
+    local intervals = math.floor(sessionTime / COINS_CHECK_INTERVAL)
+    return intervals * COINS_PER_30_MINUTES
 end
 
 local function sendCoinNotification(player, amount, reason)
@@ -117,7 +118,7 @@ function PlaytimeModule.saveTime(player)
     local sessionTime = tick() - session.startTime
     local totalTime = (data.playtime or 0) + sessionTime
     
-    -- Calcular moedas ganhas (apenas se tiver pelo menos 1 minuto)
+    -- Calcular moedas ganhas (apenas intervalos completos de 30 minutos)
     local coinsEarned = calculateCoinsEarned(sessionTime)
     
     -- Dar moedas ao jogador (apenas se ganhou moedas)
@@ -125,11 +126,11 @@ function PlaytimeModule.saveTime(player)
     if playerClass and playerClass.coins and coinsEarned > 0 then
         local success = playerClass.coins.add(coinsEarned)
         if success then
-            print(string.format("💰 %s ganhou %d moedas por jogar %s", 
+            print(string.format("💰 %s ganhou %d moedas por jogar %s (20 moedas a cada 30 min)", 
                 player.Name, coinsEarned, formatTime(sessionTime)))
             
             -- Enviar notificação apenas se ganhou moedas
-            sendCoinNotification(player, coinsEarned, "Tempo jogado")
+            sendCoinNotification(player, coinsEarned, "Tempo jogado (30min)")
         end
     end
     
@@ -174,8 +175,8 @@ function PlaytimeModule.getSaveInterval()
     return SAVE_INTERVAL
 end
 
-function PlaytimeModule.getCoinsPerMinute()
-    return COINS_PER_MINUTE
+function PlaytimeModule.getCoinsPer30Minutes()
+    return COINS_PER_30_MINUTES
 end
 
 function PlaytimeModule.getMilestones()
@@ -183,4 +184,3 @@ function PlaytimeModule.getMilestones()
 end
 
 return PlaytimeModule
-
