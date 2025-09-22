@@ -8,22 +8,24 @@ local groupStorage = storage:GetDataStore(STORAGE_DEFINITIONS.group)
 local coinsStorage = storage:GetDataStore(STORAGE_DEFINITIONS.coins)
 local playtimeStorage = storage:GetDataStore(STORAGE_DEFINITIONS.playtime)
 
-local memory = require('../classes/cache')
-local isOnlinePlayer = require('../utils/check-player-is-online')
-local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require('../classes/cache').new('player-data')
+local memory = require("../classes/cache")
+local isOnlinePlayer = require("../utils/check-player-is-online")
+local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require("../classes/cache").new("player-data")
 
-local remoteEventGroups = Instance.new('RemoteEvent')
-remoteEventGroups.Name = 'framework:update.player.groups'
+local remoteEventGroups = Instance.new("RemoteEvent")
+remoteEventGroups.Name = "framework:update.player.groups"
 remoteEventGroups.Parent = game.ReplicatedStorage
 
-local remoteEventCoins = Instance.new('RemoteEvent')
-remoteEventCoins.Name = 'framework:update.player.coins'
+local remoteEventCoins = Instance.new("RemoteEvent")
+remoteEventCoins.Name = "framework:update.player.coins"
 remoteEventCoins.Parent = game.ReplicatedStorage
 
 return function()
     local self = {}
 
     function self.fetch(player: Player): PLAYER_DEFINITION.DefPlayerSchema
+        print("🔍 Carregando dados do player:", player.Name)
+        
         local statusGroups, groups: PLAYER_DEFINITION.DefPlayerGroups = pcall(function()
             return groupStorage:GetAsync(player.UserId)
         end)
@@ -36,8 +38,14 @@ return function()
             return playtimeStorage:GetAsync(player.UserId)
         end)
 
+        print("📊 Status do carregamento:")
+        print("  - Groups status:", statusGroups, "Data:", groups)
+        print("  - Coins status:", statusCoins, "Data:", coins)
+        print("  - Playtime status:", statusPlaytime, "Data:", playtime)
+
         -- Verificar se groups é uma tabela válida
         if not statusGroups or type(groups) ~= "table" then
+            print("⚠️ Groups inválido, definindo como tabela vazia")
             groups = {}
         end
 
@@ -47,6 +55,8 @@ return function()
             coins = statusCoins and coins or 0,
             playtime = statusPlaytime and playtime or 0
         }
+
+        print("✅ Dados finais carregados:", game:GetService("HttpService"):JSONEncode(data.groups))
 
         if isOnlinePlayer(player) then
             if next(data.groups) then
@@ -65,13 +75,15 @@ return function()
         local inCache = cache.get(player.UserId)
 
         if inCache then
+            print("💾 Dados encontrados no cache para:", player.Name)
             return PlayerClass.new(inCache)
         end
 
+        print("🔄 Buscando dados do DataStore para:", player.Name)
         local data = self.fetch(player)
 
         if isOnlinePlayer(player) then
-            player:SetAttribute('coins', data.coins)
+            player:SetAttribute("coins", data.coins)
         end
 
         if not insertCache then

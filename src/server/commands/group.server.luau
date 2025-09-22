@@ -1,5 +1,6 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"])
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
 local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
@@ -78,8 +79,9 @@ RegisterCommand({
     local addSuccess = targetPlayerClass.group.add(group)
     
     if addSuccess then
+        print("✅ Grupo adicionado com sucesso!")
+        
         -- Sincronizar grupos após adição
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
         local groupSyncEvent = ReplicatedStorage:WaitForChild("GroupSyncEvent")
         
         -- Obter o novo grupo mais alto
@@ -93,14 +95,21 @@ RegisterCommand({
         local highestGroup = nil
         local highestPriority = 0
         
-        for groupName, hasGroup in pairs(targetPlayerData.groups) do
+        -- Após addSuccess, recarregar os dados atualizados
+        local updatedPlayerData, updatedPlayerClass = PlayerModule.get(targetPlayer, true)
+        for groupName, hasGroup in pairs(updatedPlayerData.groups) do
             if hasGroup and priorities[groupName] and priorities[groupName] > highestPriority then
                 highestPriority = priorities[groupName]
                 highestGroup = groupName
             end
         end
         
+        print("🔄 Grupos após adição:", game:GetService("HttpService"):JSONEncode(updatedPlayerData.groups))
+        print("🏆 Grupo mais alto:", highestGroup)
+        
         -- Enviar atualização para todos os clientes
         groupSyncEvent:FireAllClients(targetPlayer, highestGroup)
+    else
+        print("❌ Erro ao adicionar grupo!")
     end
 end)

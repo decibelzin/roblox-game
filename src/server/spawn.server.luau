@@ -77,6 +77,14 @@ local function applyPlayerTags(player)
     -- Listar todos os grupos
     local allGroups = listPlayerGroups(playerData.groups)
     
+    -- Print do JSON dos grupos do jogador
+    print("=== GRUPOS DO JOGADOR ===")
+    print("Jogador:", player.Name)
+    print("JSON dos grupos:", game:GetService("HttpService"):JSONEncode(playerData.groups))
+    print("Grupos ativos:", table.concat(allGroups, ", "))
+    print("Grupo mais alto:", highestGroup or "Nenhum")
+    print("========================")
+    
     -- Enviar mensagem de boas-vindas
     local welcomeMessage = string.format("👋 Bem-vindo, %s!", player.Name)
     if highestGroup then
