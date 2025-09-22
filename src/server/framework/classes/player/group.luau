@@ -56,11 +56,6 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         end
         
         cache.groups = groups
-
-        if isOnlinePlayer(cache.player) then
-            cache.player:SetAttribute('groups', cache.groups)
-        end
-
         return true
     end
 
@@ -77,11 +72,6 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         end
 
         cache.groups = groups
-        
-        if isOnlinePlayer(cache.player) then
-            cache.player:SetAttribute('groups', cache.groups)
-        end
-
         return true
     end
 

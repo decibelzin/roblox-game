@@ -54,7 +54,6 @@ return function()
 
         if isOnlinePlayer(player) then
             player:SetAttribute('coins', data.coins)
-            player:SetAttribute('groups', data.groups)
         end
 
         if not insertCache then
