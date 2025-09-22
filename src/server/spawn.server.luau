@@ -1,3 +1,4 @@
+-- Sistema de Spawn
 local players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -19,13 +20,13 @@ if not chatMessageEvent then
     chatMessageEvent.Parent = ReplicatedStorage
 end
 
--- Função para verificar se o jogador é o criador do jogo
-local function isGameCreator(player)
-    return player.UserId == game.CreatorId
-end
-
 -- Função para obter o grupo mais alto de um jogador
 local function getHighestGroup(playerGroups)
+    -- Verificar se playerGroups é uma tabela válida
+    if not playerGroups or type(playerGroups) ~= "table" then
+        return nil
+    end
+    
     local highestGroup = nil
     local highestPriority = 0
     
@@ -49,90 +50,78 @@ end
 
 -- Função para listar todos os grupos de um jogador
 local function listPlayerGroups(playerGroups)
+    -- Verificar se playerGroups é uma tabela válida
+    if not playerGroups or type(playerGroups) ~= "table" then
+        return {}
+    end
+    
     local groups = {}
     for groupName, hasGroup in pairs(playerGroups) do
-        if hasGroup and GROUPS_CONFIG[groupName] then
-            table.insert(groups, GROUPS_CONFIG[groupName].name)
+        if hasGroup then
+            table.insert(groups, groupName)
         end
     end
     return groups
 end
 
--- Função para verificar se o jogador tem permissão de staff
-local function isStaff(player)
-    local playerData, playerClass = PlayerModule.get(player, true)
-    local highestGroup = getHighestGroup(playerData.groups)
-    
-    -- Verificar se é owner ou admin
-    return highestGroup == "owner" or highestGroup == "admin"
+-- Função para obter cor do grupo
+local function getGroupColor(groupName)
+    if groupName and GROUPS_CONFIG[groupName] then
+        return GROUPS_CONFIG[groupName].color
+    end
+    return Color3.fromRGB(255, 255, 255) -- Cor padrão
 end
 
-players.PlayerAdded:Connect(function(player)
-    -- Verificar se é o criador do jogo e definir grupo owner automaticamente
-    if isGameCreator(player) then
-        print("🎮 Criador do jogo detectado:", player.Name)
-        
-        -- Aguardar um pouco para garantir que os dados do player estejam carregados
-        wait(1)
-        
-        -- Obter dados do player
-        local playerData, playerClass = PlayerModule.get(player, true)
-        
-        -- Verificar se já tem o grupo owner
-        if not playerClass.group.checkOne("owner") then
-            print("👑 Definindo grupo 'owner' para o criador do jogo...")
-            local success = playerClass.group.add("owner")
-            if success then
-                print("✅ Grupo 'owner' adicionado com sucesso!")
-            else
-                print("❌ Erro ao adicionar grupo 'owner'")
-            end
-        else
-            print("✅ Já possui grupo 'owner'")
-        end
+-- Função para aplicar tags ao jogador
+local function applyPlayerTags(player)
+    -- Obter dados do player
+    local playerData, playerClass = PlayerModule.get(player, true)
+    
+    -- Obter o grupo mais alto
+    local highestGroup = getHighestGroup(playerData.groups)
+    
+    -- Listar todos os grupos
+    local allGroups = listPlayerGroups(playerData.groups)
+    
+    -- Mostrar informações dos grupos
+    if #allGroups > 0 then
+        print("📋 Grupos de", player.Name, ":", table.concat(allGroups, ", "))
+        print("🏆 Grupo mais alto:", highestGroup or "Nenhum")
+    else
+        print("❌ Nenhum grupo encontrado")
     end
     
+    -- Aplicar cor baseada no grupo
+    if highestGroup then
+        local groupColor = getGroupColor(highestGroup)
+        print("🎨 Cor do grupo:", groupColor)
+    else
+        print("📋 Sem grupos atribuídos")
+    end
+    
+    -- Enviar mensagem de boas-vindas
+    local welcomeMessage = string.format("👋 Bem-vindo, %s!", player.Name)
+    if highestGroup then
+        welcomeMessage = welcomeMessage .. string.format(" (Grupo: %s)", highestGroup)
+    end
+    chatMessageEvent:FireClient(player, welcomeMessage)
+    
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+end
+
+-- Eventos
+players.PlayerAdded:Connect(function(player)
+    print("👤 Jogador entrou:", player.Name)
+    
     player.CharacterAdded:Connect(function(character)
+        wait(1) -- Aguardar o character carregar completamente
+        
         print("Player spawnou:", player.Name)
         
-        -- Aguardar um pouco para garantir que os dados do player estejam carregados
-        wait(1)
-        
-        -- Obter dados do player
-        local playerData, playerClass = PlayerModule.get(player, true)
-        
-        -- Obter o grupo mais alto
-        local highestGroup = getHighestGroup(playerData.groups)
-        
-        -- Listar todos os grupos
-        local allGroups = listPlayerGroups(playerData.groups)
-        
-        -- Mostrar informações dos grupos
-        if highestGroup and GROUPS_CONFIG[highestGroup] then
-            local groupData = GROUPS_CONFIG[highestGroup]
-            print("🎖️ Grupo principal:", groupData.name)
-            print("🎨 Cor:", tostring(groupData.color))
-        else
-            print("❌ Nenhum grupo encontrado")
-        end
-        
-        if #allGroups > 0 then
-            print("📋 Todos os grupos:", table.concat(allGroups, ", "))
-        else
-            print("📋 Sem grupos atribuídos")
-        end
-        
-        -- Verificar se é staff e enviar mensagem no chat
-        if isStaff(player) then
-            local groupData = GROUPS_CONFIG[highestGroup]
-            local groupName = groupData and groupData.name or highestGroup
-            local chatMessage = "👑 " .. player.Name .. " (" .. groupName .. ") entrou no jogo!"
-            
-            -- Enviar mensagem para todos os clientes
-            chatMessageEvent:FireAllClients(chatMessage)
-            print("📢 Mensagem de staff enviada:", chatMessage)
-        end
-        
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        -- Aplicar tags do jogador
+        applyPlayerTags(player)
     end)
 end)
+
+print("🎮 Sistema de Spawn iniciado!")
+

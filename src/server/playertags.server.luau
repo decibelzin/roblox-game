@@ -1,21 +1,30 @@
--- Servidor para sincronizar grupos com o cliente
+-- Sistema de Player Tags
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Importar o módulo de player
-local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
-local cache = {
-    player = {}
-}
-local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)(cache.player)
+-- Importar módulos
+local PLAYER_DEFINITION = require(ReplicatedStorage.Shared.types["player.types"])
+local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)
 
--- Criar RemoteEvent para sincronizar grupos
-local groupSyncEvent = Instance.new("RemoteEvent")
-groupSyncEvent.Name = "GroupSyncEvent"
-groupSyncEvent.Parent = ReplicatedStorage
+-- Configurar cache
+local cache = { player = {} }
+local playerModule = PlayerModule(cache.player)
+
+-- Criar RemoteEvent para sincronização de grupos
+local groupSyncEvent = ReplicatedStorage:FindFirstChild("GroupSyncEvent")
+if not groupSyncEvent then
+    groupSyncEvent = Instance.new("RemoteEvent")
+    groupSyncEvent.Name = "GroupSyncEvent"
+    groupSyncEvent.Parent = ReplicatedStorage
+end
 
 -- Função para obter o grupo mais alto de um jogador
 local function getHighestGroup(playerGroups)
+    -- Verificar se playerGroups é uma tabela válida
+    if not playerGroups or type(playerGroups) ~= "table" then
+        return nil
+    end
+    
     local highestGroup = nil
     local highestPriority = 0
     
@@ -37,64 +46,81 @@ local function getHighestGroup(playerGroups)
     return highestGroup
 end
 
+-- Função para listar todos os grupos de um jogador
+local function listPlayerGroups(playerGroups)
+    -- Verificar se playerGroups é uma tabela válida
+    if not playerGroups or type(playerGroups) ~= "table" then
+        return {}
+    end
+    
+    local groups = {}
+    for groupName, hasGroup in pairs(playerGroups) do
+        if hasGroup then
+            table.insert(groups, groupName)
+        end
+    end
+    return groups
+end
+
 -- Função para sincronizar grupos de todos os jogadores
 local function syncAllPlayerGroups()
     print("🔄 Sincronizando grupos de todos os jogadores...")
-    for _, targetPlayer in pairs(Players:GetPlayers()) do
-        local playerData, playerClass = PlayerModule.get(targetPlayer, true)
-        local highestGroup = getHighestGroup(playerData.groups)
-        
-        print("📤 Enviando para todos os clientes:", targetPlayer.Name, "->", highestGroup or "nil")
-        
-        -- Enviar para todos os clientes (incluindo o próprio jogador)
-        groupSyncEvent:FireAllClients(targetPlayer, highestGroup)
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        local playerData = playerModule.get(player, false)
+        if playerData then
+            local highestGroup = getHighestGroup(playerData.groups)
+            local allGroups = listPlayerGroups(playerData.groups)
+            
+            local message = string.format("%s -> %s", player.Name, highestGroup or "nil")
+            print("📤 Enviando para todos os clientes:", message)
+            
+            groupSyncEvent:FireAllClients(player.Name, highestGroup, allGroups)
+        end
     end
+    
     print("✅ Sincronização concluída!")
 end
 
 -- Função para sincronizar grupos de um jogador específico
-local function syncPlayerGroups(targetPlayer)
-    local playerData, playerClass = PlayerModule.get(targetPlayer, true)
-    local highestGroup = getHighestGroup(playerData.groups)
-    
-    print("�� Sincronizando", targetPlayer.Name, "->", highestGroup or "nil")
-    
-    -- Enviar para todos os clientes
-    groupSyncEvent:FireAllClients(targetPlayer, highestGroup)
+local function syncPlayerGroups(player)
+    local playerData = playerModule.get(player, false)
+    if playerData then
+        local highestGroup = getHighestGroup(playerData.groups)
+        local allGroups = listPlayerGroups(playerData.groups)
+        
+        local message = string.format("%s : %s -> %s", player.Name, player.Name, highestGroup or "nil")
+        print("📤 Enviando para", player.Name, ":", message)
+        
+        groupSyncEvent:FireClient(player, player.Name, highestGroup, allGroups)
+    end
 end
 
--- Quando um jogador entra
+-- Eventos
 Players.PlayerAdded:Connect(function(player)
-    print("👤 Jogador entrou:", player.Name)
-    
-    -- Aguardar um pouco para garantir que o cliente esteja pronto
-    wait(3)
-    
-    -- Sincronizar grupos de todos os jogadores para o novo jogador
-    print("🔄 Sincronizando grupos para o novo jogador...")
-    for _, targetPlayer in pairs(Players:GetPlayers()) do
-        local playerData, playerClass = PlayerModule.get(targetPlayer, true)
-        local highestGroup = getHighestGroup(playerData.groups)
-        
-        print("📤 Enviando para", player.Name, ":", targetPlayer.Name, "->", highestGroup or "nil")
-        groupSyncEvent:FireClient(player, targetPlayer, highestGroup)
+    player.CharacterAdded:Connect(function()
+        wait(1)
+        print("🔄 Sincronizando grupos para o novo jogador...")
+        syncPlayerGroups(player)
+        print("✅ Sincronização para novo jogador concluída!")
+    end)
+end)
+
+-- Sincronização inicial
+spawn(function()
+    wait(2)
+    print("🚀 Iniciando sincronização inicial...")
+    syncAllPlayerGroups()
+end)
+
+-- Sincronização de segurança (a cada 5 segundos)
+spawn(function()
+    while true do
+        wait(5)
+        print("🔄 Sincronização de segurança...")
+        syncAllPlayerGroups()
     end
-    print("✅ Sincronização para novo jogador concluída!")
 end)
 
--- Quando um jogador sai
-Players.PlayerRemoving:Connect(function(player)
-    print("👋 Jogador saindo:", player.Name)
-    -- Notificar todos os clientes que o jogador saiu
-    groupSyncEvent:FireAllClients(player, nil)
-end)
+print("🏷️ Sistema de Player Tags iniciado!")
 
--- Sincronizar grupos iniciais após um delay
-wait(2)
-print("🚀 Iniciando sincronização inicial...")
-syncAllPlayerGroups()
-
--- Sincronizar novamente após 5 segundos para garantir
-wait(5)
-print("🔄 Sincronização de segurança...")
-syncAllPlayerGroups()

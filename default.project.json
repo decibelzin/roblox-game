@@ -6,6 +6,15 @@
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"
+      },
+      "AFKDetection": {
+        "$className": "RemoteEvent"
+      },
+      "ChatMessageEvent": {
+        "$className": "RemoteEvent"
+      },
+      "CoinNotification": {
+        "$className": "RemoteEvent"
       }
     },
 

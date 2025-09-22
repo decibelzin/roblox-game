@@ -6,9 +6,10 @@ local storage = game:GetService("DataStoreService")
 
 local groupStorage = storage:GetDataStore(STORAGE_DEFINITIONS.group)
 local coinsStorage = storage:GetDataStore(STORAGE_DEFINITIONS.coins)
+local playtimeStorage = storage:GetDataStore(STORAGE_DEFINITIONS.playtime)
 
-local memory = require('../classes/cache')
-local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require('../classes/cache').new('player-data')
+local memory = require("../classes/cache")
+local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require("../classes/cache").new("player-data")
 
 return function()
     local self = {}
@@ -22,10 +23,20 @@ return function()
             return coinsStorage:GetAsync(player.UserId)
         end)
 
+        local statusPlaytime, playtime: number = pcall(function()
+            return playtimeStorage:GetAsync(player.UserId)
+        end)
+
+        -- Verificar se groups é uma tabela válida
+        if not statusGroups or type(groups) ~= "table" then
+            groups = {}
+        end
+
         local data: PLAYER_DEFINITION.DefPlayerSchema = {
             player = player,
-            groups = statusGroups and groups or {},
-            coins = statusCoins and coins or 0
+            groups = groups,
+            coins = statusCoins and coins or 0,
+            playtime = statusPlaytime and playtime or 0
         }
 
         return data
