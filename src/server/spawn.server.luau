@@ -3,13 +3,7 @@ local players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Importar o módulo de player para acessar os grupos
-local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
-local cache = {
-    player = {}
-}
-local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)(cache.player)
-
--- Importar configurações de grupos
+local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
 
 -- Criar RemoteEvent para enviar mensagens do chat

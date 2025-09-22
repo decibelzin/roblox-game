@@ -6,8 +6,7 @@ local PLAYER_MODULE = require(game.ServerScriptService.Server.framework.modules.
 local PLAYTIME_MODULE = require(game.ServerScriptService.Server.framework.modules.playtime)
 
 -- Inicializar
-local cache = { player = {} }
-local playerModule = PLAYER_MODULE(cache.player)
+local playerModule = PLAYER_MODULE()
 local playerClasses = {}
 
 -- Função para obter classe do jogador
