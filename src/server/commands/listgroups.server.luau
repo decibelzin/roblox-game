@@ -1,11 +1,12 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"])
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local DataStoreService = game:GetService("DataStoreService")
 
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
-local STORAGE_DEFINITIONS = require(game.ReplicatedStorage.Shared.storage)
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
+
+-- Aguardar o cache global estar disponível
+local globalPlayerModule, globalCache = _G.getSharedPlayerModule and _G.getSharedPlayerModule() or nil, _G.globalCache
 
 -- Criar RemoteEvent para enviar mensagens do chat
 local chatMessageEvent = ReplicatedStorage:FindFirstChild("ChatMessageEvent")
@@ -15,14 +16,45 @@ if not chatMessageEvent then
     chatMessageEvent.Parent = ReplicatedStorage
 end
 
--- Função para buscar grupos de um jogador (online ou offline)
-local function getPlayerGroups(userId)
-    local groupStorage = DataStoreService:GetDataStore(STORAGE_DEFINITIONS.group)
-    local success, groups = pcall(function()
-        return groupStorage:GetAsync(userId)
-    end)
+-- Função para obter o grupo mais alto de um jogador
+local function getHighestGroup(playerGroups)
+    if not playerGroups or type(playerGroups) ~= "table" then
+        return nil
+    end
     
-    return success and groups or {}
+    local highestGroup = nil
+    local highestPriority = 0
+    
+    local priorities = {
+        owner = 4,
+        admin = 3,
+        moderator = 2,
+        ["vip-gold"] = 1
+    }
+    
+    for groupName, hasGroup in pairs(playerGroups) do
+        if hasGroup and priorities[groupName] and priorities[groupName] > highestPriority then
+            highestPriority = priorities[groupName]
+            highestGroup = groupName
+        end
+    end
+    
+    return highestGroup
+end
+
+-- Função para listar todos os grupos de um jogador
+local function listPlayerGroups(playerGroups)
+    if not playerGroups or type(playerGroups) ~= "table" then
+        return {}
+    end
+    
+    local groups = {}
+    for groupName, hasGroup in pairs(playerGroups) do
+        if hasGroup then
+            table.insert(groups, groupName)
+        end
+    end
+    return groups
 end
 
 RegisterCommand({
@@ -52,11 +84,24 @@ RegisterCommand({
     local targetPlayer = Players:GetPlayerByUserId(targetUserId)
     local isOnline = targetPlayer ~= nil
     
-    -- Buscar grupos do jogador (funciona mesmo se estiver offline)
-    local playerGroups = getPlayerGroups(targetUserId)
+    local playerGroups = {}
+    local groupsList = {}
+    
+    if isOnline and globalPlayerModule then
+        -- Se estiver online, usar dados do cache global
+        local playerData = globalPlayerModule.get(targetPlayer, false)
+        if playerData then
+            playerGroups = playerData.groups or {}
+        end
+    else
+        -- Se estiver offline, carregar do DataStore
+        if globalPlayerModule then
+            local playerData = globalPlayerModule.fetch(Players:GetPlayerByUserId(targetUserId) or {UserId = targetUserId})
+            playerGroups = playerData.groups or {}
+        end
+    end
     
     -- Coletar grupos do jogador
-    local groupsList = {}
     for groupName, hasGroup in pairs(playerGroups) do
         if hasGroup and GROUPS_CONFIG[groupName] then
             local groupData = GROUPS_CONFIG[groupName]

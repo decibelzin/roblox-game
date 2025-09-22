@@ -124,4 +124,3 @@ players.PlayerAdded:Connect(function(player)
 end)
 
 print("🎮 Sistema de Spawn iniciado!")
-
