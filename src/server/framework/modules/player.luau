@@ -12,6 +12,14 @@ local memory = require('../classes/cache')
 local isOnlinePlayer = require('../utils/check-player-is-online')
 local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require('../classes/cache').new('player-data')
 
+local remoteEventGroups = Instance.new('RemoteEvent')
+remoteEventGroups.Name = 'framework:update.player.groups'
+remoteEventGroups.Parent = game.ReplicatedStorage
+
+local remoteEventCoins = Instance.new('RemoteEvent')
+remoteEventCoins.Name = 'framework:update.player.coins'
+remoteEventCoins.Parent = game.ReplicatedStorage
+
 return function()
     local self = {}
 
@@ -39,6 +47,16 @@ return function()
             coins = statusCoins and coins or 0,
             playtime = statusPlaytime and playtime or 0
         }
+
+        if isOnlinePlayer(player) then
+            if next(data.groups) then
+                remoteEventGroups:FireClient(player, data.groups)
+            end
+
+            if data.coins > 0 then
+                remoteEventCoins:FireClient(player, data.coins)
+            end
+        end
 
         return data
     end

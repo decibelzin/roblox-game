@@ -3,6 +3,11 @@ local STORAGE_KEY = require(game.ReplicatedStorage.Shared.storage).group
 local database = game:GetService("DataStoreService"):GetDataStore(STORAGE_KEY)
 local isOnlinePlayer = require('../../utils/check-player-is-online')
 
+local event = Instance.new('RemoteEvent')
+event.Name = 'framework:update.player.groups'
+event.Parent = game.ReplicatedStorage
+
+
 return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
     local self = {}
 
@@ -22,7 +27,7 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         cache.coins = balance
 
         if isOnlinePlayer(cache.player) then
-            cache.player:SetAttribute('coins', cache.coins)
+            event:FireClient(cache.player, cache.coins)
         end
 
         return true
@@ -48,7 +53,7 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         cache.coins = balance
 
         if isOnlinePlayer(cache.player) then
-            cache.player:SetAttribute('coins', cache.coins)
+            event:FireClient(cache.player, cache.coins)
         end
 
         return true
