@@ -1,3 +1,4 @@
 return {
-    group = 'player.groups'
+    group = 'player.groups',
+    coins = 'player.coins'
 }

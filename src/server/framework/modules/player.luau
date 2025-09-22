@@ -3,7 +3,9 @@ local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.ty
 local PlayerClass = require(game.ServerScriptService.Server.framework.classes.player.main)
 
 local storage = game:GetService("DataStoreService")
+
 local groupStorage = storage:GetDataStore(STORAGE_DEFINITIONS.group)
+local coinsStorage = storage:GetDataStore(STORAGE_DEFINITIONS.coins)
 
 local memory = require('../classes/cache')
 local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require('../classes/cache').new('player-data')
@@ -12,13 +14,18 @@ return function()
     local self = {}
 
     function self.fetch(player: Player): PLAYER_DEFINITION.DefPlayerSchema
-        local success, groups: PLAYER_DEFINITION.DefPlayerGroups = pcall(function()
+        local statusGroups, groups: PLAYER_DEFINITION.DefPlayerGroups = pcall(function()
             return groupStorage:GetAsync(player.UserId)
+        end)
+
+        local statusCoins, coins: number = pcall(function()
+            return coinsStorage:GetAsync(player.UserId)
         end)
 
         local data: PLAYER_DEFINITION.DefPlayerSchema = {
             player = player,
-            groups = success and groups or {},
+            groups = statusGroups and groups or {},
+            coins = statusCoins and coins or 0
         }
 
         return data
