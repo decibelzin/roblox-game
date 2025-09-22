@@ -50,5 +50,3 @@ spawn(function()
     end
 end)
 
-print("🎮 Playtime com recompensas iniciado!")
-

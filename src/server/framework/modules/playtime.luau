@@ -77,9 +77,6 @@ local function checkMilestones(totalTime, player)
         if playerClass and playerClass.coins then
             local success = playerClass.coins.add(milestone.bonus)
             if success then
-                print(string.format("🎉 %s alcançou marco de %d minutos! +%d moedas", 
-                    player.Name, milestone.minutes, milestone.bonus))
-                
                 -- Enviar notificação
                 sendCoinNotification(player, milestone.bonus, string.format("Marco de %d minutos!", milestone.minutes))
             end
@@ -96,8 +93,6 @@ function PlaytimeModule.startTracking(player)
         lastSave = tick(),
         lastCoinsCheck = 0
     }
-    
-    print("🎮 Iniciando tracking:", player.Name)
 end
 
 function PlaytimeModule.stopTracking(player)
@@ -106,7 +101,6 @@ function PlaytimeModule.stopTracking(player)
     
     PlaytimeModule.saveTime(player)
     playerSessions[player.UserId] = nil
-    print("⏹️ Parando tracking:", player.Name)
 end
 
 function PlaytimeModule.saveTime(player)
@@ -126,9 +120,6 @@ function PlaytimeModule.saveTime(player)
     if playerClass and playerClass.coins and coinsEarned > 0 then
         local success = playerClass.coins.add(coinsEarned)
         if success then
-            print(string.format("💰 %s ganhou %d moedas por jogar %s (20 moedas a cada 30 min)", 
-                player.Name, coinsEarned, formatTime(sessionTime)))
-            
             -- Enviar notificação apenas se ganhou moedas
             sendCoinNotification(player, coinsEarned, "Tempo jogado (30min)")
         end
@@ -145,9 +136,6 @@ function PlaytimeModule.saveTime(player)
     if success then
         data.playtime = totalTime
         session.lastSave = tick()
-        print("✅ Playtime salvo:", player.Name, formatTime(totalTime))
-    else
-        warn("❌ Erro ao salvar playtime:", player.Name)
     end
 end
 

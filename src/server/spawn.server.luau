@@ -77,44 +77,20 @@ local function applyPlayerTags(player)
     -- Listar todos os grupos
     local allGroups = listPlayerGroups(playerData.groups)
     
-    -- Mostrar informações dos grupos
-    if #allGroups > 0 then
-        print("📋 Grupos de", player.Name, ":", table.concat(allGroups, ", "))
-        print("🏆 Grupo mais alto:", highestGroup or "Nenhum")
-    else
-        print("❌ Nenhum grupo encontrado")
-    end
-    
-    -- Aplicar cor baseada no grupo
-    if highestGroup then
-        local groupColor = getGroupColor(highestGroup)
-        print("🎨 Cor do grupo:", groupColor)
-    else
-        print("📋 Sem grupos atribuídos")
-    end
-    
     -- Enviar mensagem de boas-vindas
     local welcomeMessage = string.format("👋 Bem-vindo, %s!", player.Name)
     if highestGroup then
         welcomeMessage = welcomeMessage .. string.format(" (Grupo: %s)", highestGroup)
     end
     chatMessageEvent:FireClient(player, welcomeMessage)
-    
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 end
 
 -- Eventos
 players.PlayerAdded:Connect(function(player)
-    print("👤 Jogador entrou:", player.Name)
-    
     player.CharacterAdded:Connect(function(character)
         wait(1) -- Aguardar o character carregar completamente
-        
-        print("Player spawnou:", player.Name)
         
         -- Aplicar tags do jogador
         applyPlayerTags(player)
     end)
 end)
-
-print("🎮 Sistema de Spawn iniciado!")

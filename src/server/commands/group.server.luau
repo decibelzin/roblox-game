@@ -2,11 +2,10 @@ local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"
 local Players = game:GetService("Players")
 
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
-local cache = {
-    player = {}
-}
-local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)(cache.player)
+local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
+local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
 
+-- Função para verificar se o jogador é owner do jogo
 local function isGameOwner(player)
     local success, result = pcall(function()
         return player:GetRankInGroup(game.CreatorId)
@@ -20,6 +19,15 @@ local function isGameOwner(player)
     return result >= 255
 end
 
+-- Função para listar grupos disponíveis
+local function listAvailableGroups()
+    local groups = {}
+    for groupName, groupData in pairs(GROUPS_CONFIG) do
+        table.insert(groups, groupName)
+    end
+    return table.concat(groups, ", ")
+end
+
 RegisterCommand({
     name = "group",
     description = "Dá um grupo para um usuário",
@@ -31,14 +39,16 @@ RegisterCommand({
 
     -- Verificar se os parâmetros foram fornecidos
     if not username or not group then
-        print("Uso: /group <username> <group>")
-        print("Grupos disponíveis: owner, admin, moderator, vip-gold")
+        return
+    end
+
+    -- Verificar se o grupo existe
+    if not GROUPS_CONFIG[group] then
         return
     end
 
     -- Verificar se está tentando definir o grupo "owner"
     if group == "owner" and not isGameOwner(player) then
-        print("Erro: Apenas o owner do jogo pode definir o grupo \"owner\"!")
         return
     end
 
@@ -48,27 +58,49 @@ RegisterCommand({
     end)
 
     if not success then
-        print("Erro: Usuário \"" .. username .. "\" não encontrado!")
         return
     end
 
     -- Verificar se o usuário está online
     local targetPlayer = Players:GetPlayerByUserId(targetUserId)
     if not targetPlayer then
-        print("Erro: Usuário \"" .. username .. "\" não está online!")
         return
     end
 
     -- Obter dados do player alvo
     local targetPlayerData, targetPlayerClass = PlayerModule.get(targetPlayer, true)
     
+    if not targetPlayerData or not targetPlayerClass then
+        return
+    end
+    
     -- Tentar adicionar o grupo
     local addSuccess = targetPlayerClass.group.add(group)
     
     if addSuccess then
-        print("Grupo \"" .. group .. "\" adicionado com sucesso para " .. username .. "!")
-    else
-        print("Erro: Falha ao adicionar grupo \"" .. group .. "\" para " .. username .. "!")
-        print("Verifique se o grupo existe e se o usuário não possui um grupo da mesma organização.")
+        -- Sincronizar grupos após adição
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local groupSyncEvent = ReplicatedStorage:WaitForChild("GroupSyncEvent")
+        
+        -- Obter o novo grupo mais alto
+        local priorities = {
+            owner = 4,
+            admin = 3,
+            moderator = 2,
+            ["vip-gold"] = 1
+        }
+        
+        local highestGroup = nil
+        local highestPriority = 0
+        
+        for groupName, hasGroup in pairs(targetPlayerData.groups) do
+            if hasGroup and priorities[groupName] and priorities[groupName] > highestPriority then
+                highestPriority = priorities[groupName]
+                highestGroup = groupName
+            end
+        end
+        
+        -- Enviar atualização para todos os clientes
+        groupSyncEvent:FireAllClients(targetPlayer, highestGroup)
     end
 end)

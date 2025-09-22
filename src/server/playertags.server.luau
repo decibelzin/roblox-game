@@ -59,22 +59,15 @@ end
 
 -- Função para sincronizar grupos de todos os jogadores
 local function syncAllPlayerGroups()
-    print("🔄 Sincronizando grupos de todos os jogadores...")
-    
     for _, player in pairs(Players:GetPlayers()) do
         local playerData = playerModule.get(player, false)
         if playerData then
             local highestGroup = getHighestGroup(playerData.groups)
             local allGroups = listPlayerGroups(playerData.groups)
             
-            local message = string.format("%s -> %s", player.Name, highestGroup or "nil")
-            print("📤 Enviando para todos os clientes:", message)
-            
             groupSyncEvent:FireAllClients(player.Name, highestGroup, allGroups)
         end
     end
-    
-    print("✅ Sincronização concluída!")
 end
 
 -- Função para sincronizar grupos de um jogador específico
@@ -84,9 +77,6 @@ local function syncPlayerGroups(player)
         local highestGroup = getHighestGroup(playerData.groups)
         local allGroups = listPlayerGroups(playerData.groups)
         
-        local message = string.format("%s : %s -> %s", player.Name, player.Name, highestGroup or "nil")
-        print("📤 Enviando para", player.Name, ":", message)
-        
         groupSyncEvent:FireClient(player, player.Name, highestGroup, allGroups)
     end
 end
@@ -95,16 +85,13 @@ end
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
         wait(1)
-        print("🔄 Sincronizando grupos para o novo jogador...")
         syncPlayerGroups(player)
-        print("✅ Sincronização para novo jogador concluída!")
     end)
 end)
 
 -- Sincronização inicial
 spawn(function()
     wait(2)
-    print("🚀 Iniciando sincronização inicial...")
     syncAllPlayerGroups()
 end)
 
@@ -112,9 +99,6 @@ end)
 spawn(function()
     while true do
         wait(10)
-        print("🔄 Sincronização de segurança...")
         syncAllPlayerGroups()
     end
 end)
-
-print("🏷️ Sistema de Player Tags iniciado!")

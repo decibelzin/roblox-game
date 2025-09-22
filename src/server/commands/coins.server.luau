@@ -7,7 +7,7 @@ local PLAYTIME_MODULE = require(game.ServerScriptService.Server.framework.module
 
 -- Cache
 local cache = { player = {} }
-local playerModule = PLAYER_MODULE(cache.player)
+local playerModule = PLAYER_MODULE()
 
 -- Aguardar RemoteEvent
 local chatMessageEvent = ReplicatedStorage:WaitForChild("ChatMessageEvent")

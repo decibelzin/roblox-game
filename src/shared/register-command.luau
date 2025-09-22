@@ -51,14 +51,12 @@ return function(definition: DefCommand, callback: DefCallback)
         if definition.permissions and #definition.permissions > 0 then
             -- Se o jogador for owner ou admin do grupo do jogo, ignora a validação de permissões
             if isGameGroupOwnerOrAdmin(player) then
-                print("Owner/Admin do grupo do jogo detectado - permissões ignoradas")
+                -- Owner/Admin do grupo do jogo detectado - permissões ignoradas
             else
                 local _, methods = PlayerModule.get(player, true)
                 local hasPermission = methods.group.checkMany(definition.permissions)
                 
                 if not hasPermission then
-                    print("Você não tem permissão para usar este comando!")
-                    print("Grupos necessários: " .. table.concat(definition.permissions, ", "))
                     return
                 end
             end
