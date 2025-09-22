@@ -8,8 +8,9 @@ local groupStorage = storage:GetDataStore(STORAGE_DEFINITIONS.group)
 local coinsStorage = storage:GetDataStore(STORAGE_DEFINITIONS.coins)
 local playtimeStorage = storage:GetDataStore(STORAGE_DEFINITIONS.playtime)
 
-local memory = require("../classes/cache")
-local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require("../classes/cache").new("player-data")
+local memory = require('../classes/cache')
+local isOnlinePlayer = require('../utils/check-player-is-online')
+local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require('../classes/cache').new('player-data')
 
 return function()
     local self = {}
@@ -50,6 +51,11 @@ return function()
         end
 
         local data = self.fetch(player)
+
+        if isOnlinePlayer(player) then
+            player:SetAttribute('coins', data.coins)
+            player:SetAttribute('groups', data.groups)
+        end
 
         if not insertCache then
             return PlayerClass.new(data)

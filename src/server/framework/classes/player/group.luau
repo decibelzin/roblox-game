@@ -2,6 +2,7 @@ local STORAGE_KEY = require(game.ReplicatedStorage.Shared.storage).group
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
 local storage = game:GetService("DataStoreService"):GetDataStore(STORAGE_KEY)
+local isOnlinePlayer = require('../../utils/check-player-is-online')
 
 --- isso aqui verifica se um grupo é valido
 local function isValidGroup(group: string)
@@ -55,6 +56,11 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         end
         
         cache.groups = groups
+
+        if isOnlinePlayer(cache.player) then
+            cache.player:SetAttribute('groups', cache.groups)
+        end
+
         return true
     end
 
@@ -71,6 +77,10 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         end
 
         cache.groups = groups
+        
+        if isOnlinePlayer(cache.player) then
+            cache.player:SetAttribute('groups', cache.groups)
+        end
 
         return true
     end

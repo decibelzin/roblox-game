@@ -1,6 +1,7 @@
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
 local STORAGE_KEY = require(game.ReplicatedStorage.Shared.storage).group
 local database = game:GetService("DataStoreService"):GetDataStore(STORAGE_KEY)
+local isOnlinePlayer = require('../../utils/check-player-is-online')
 
 return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
     local self = {}
@@ -19,6 +20,11 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         end
 
         cache.coins = balance
+
+        if isOnlinePlayer(cache.player) then
+            cache.player:SetAttribute('coins', cache.coins)
+        end
+
         return true
     end
 
@@ -40,6 +46,11 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         end
 
         cache.coins = balance
+
+        if isOnlinePlayer(cache.player) then
+            cache.player:SetAttribute('coins', cache.coins)
+        end
+
         return true
     end
 
