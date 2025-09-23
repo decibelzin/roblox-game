@@ -60,13 +60,8 @@ end
 
 -- Escutar eventos de sincronização de grupos
 groupSyncEvent.OnClientEvent:Connect(function(playerName, highestGroup, allGroups)
-    updatePlayerTag(playerName, highestGroup, allGroups)
-end)
 
--- Atualizar tags quando personagens spawnarem
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(character)
-        wait(1) -- Aguardar um pouco para garantir que o servidor já processou
-        -- A sincronização será feita pelo servidor via GroupSyncEvent
-    end)
+    print('evento de sync de grupos recebido')
+
+    updatePlayerTag(playerName, highestGroup, allGroups)
 end)

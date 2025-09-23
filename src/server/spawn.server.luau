@@ -17,50 +17,6 @@ if not chatMessageEvent then
     chatMessageEvent.Parent = ReplicatedStorage
 end
 
--- Função para obter o grupo mais alto de um jogador
-local function getHighestGroup(playerGroups)
-    -- Verificar se playerGroups é uma tabela válida
-    if not playerGroups or type(playerGroups) ~= "table" then
-        return "None"
-    end
-    
-    local highestGroup = nil
-    local highestPriority = 0
-    
-    -- Prioridades dos grupos (maior número = maior prioridade)
-    local priorities = {
-        owner = 4,
-        admin = 3,
-        moderator = 2,
-        ["vip-gold"] = 1
-    }
-    
-    for groupName, hasGroup in pairs(playerGroups) do
-        if hasGroup and priorities[groupName] and priorities[groupName] > highestPriority then
-            highestPriority = priorities[groupName]
-            highestGroup = groupName
-        end
-    end
-    
-    return highestGroup or "None"
-end
-
--- Função para listar todos os grupos de um jogador
-local function listPlayerGroups(playerGroups)
-    -- Verificar se playerGroups é uma tabela válida
-    if not playerGroups or type(playerGroups) ~= "table" then
-        return {}
-    end
-    
-    local groups = {}
-    for groupName, hasGroup in pairs(playerGroups) do
-        if hasGroup then
-            table.insert(groups, groupName)
-        end
-    end
-    return groups
-end
-
 -- Função para obter cor do grupo
 local function getGroupColor(groupName)
     if groupName and GROUPS_CONFIG[groupName] then
@@ -105,29 +61,21 @@ local function setupPlayerLeaderboard(player)
     -- Função para atualizar os valores
     local function updateLeaderboard()
         -- Obter dados do jogador
-        local playerData = PlayerModule.get(player, false)
+        local playerData, playerClass = PlayerModule.get(player, false)
         if not playerData then return end
         
         -- Atualizar grupo
-        local highestGroup = getHighestGroup(playerData.groups)
-        groupValue.Value = highestGroup
+        local highestGroup = playerClass.group.getHighestGroup()
+
+        groupValue.Value = highestGroup or ''
         
         -- Atualizar minutos
         local totalTime, sessionTime = PLAYTIME_MODULE.getCurrentTime(player)
         local totalMinutes = math.floor((totalTime + sessionTime) / 60)
         minutesValue.Value = totalMinutes
     end
-    
-    -- Atualizar imediatamente
+
     updateLeaderboard()
-    
-    -- Atualizar a cada 30 segundos
-    spawn(function()
-        while player.Parent do
-            wait(30)
-            updateLeaderboard()
-        end
-    end)
 end
 
 -- Função para aplicar tags ao jogador
@@ -136,10 +84,10 @@ local function applyPlayerTags(player)
     local playerData, playerClass = PlayerModule.get(player, true)
     
     -- Obter o grupo mais alto
-    local highestGroup = getHighestGroup(playerData.groups)
+    local highestGroup = playerClass.group.getHighestGroup()
     
     -- Listar todos os grupos
-    local allGroups = listPlayerGroups(playerData.groups)
+    local allGroups = playerClass.group.list()
     
     -- Print do JSON dos grupos do jogador
     print("=== GRUPOS DO JOGADOR ===")

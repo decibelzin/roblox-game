@@ -24,8 +24,6 @@ return function()
     local self = {}
 
     function self.fetch(player: Player): PLAYER_DEFINITION.DefPlayerSchema
-        print("🔍 Carregando dados do player:", player.Name)
-        
         local statusGroups, groups: PLAYER_DEFINITION.DefPlayerGroups = pcall(function()
             return groupStorage:GetAsync(player.UserId)
         end)
@@ -38,14 +36,8 @@ return function()
             return playtimeStorage:GetAsync(player.UserId)
         end)
 
-        print("📊 Status do carregamento:")
-        print("  - Groups status:", statusGroups, "Data:", groups)
-        print("  - Coins status:", statusCoins, "Data:", coins)
-        print("  - Playtime status:", statusPlaytime, "Data:", playtime)
-
         -- Verificar se groups é uma tabela válida
         if not statusGroups or type(groups) ~= "table" then
-            print("⚠️ Groups inválido, definindo como tabela vazia")
             groups = {}
         end
 
@@ -55,8 +47,6 @@ return function()
             coins = statusCoins and coins or 0,
             playtime = statusPlaytime and playtime or 0
         }
-
-        print("✅ Dados finais carregados:", game:GetService("HttpService"):JSONEncode(data.groups))
 
         if isOnlinePlayer(player) then
             if next(data.groups) then
@@ -78,7 +68,6 @@ return function()
             return PlayerClass.new(inCache)
         end
 
-        print("🔄 Buscando dados do DataStore para:", player.Name)
         local data = self.fetch(player)
 
         if isOnlinePlayer(player) then

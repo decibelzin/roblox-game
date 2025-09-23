@@ -79,11 +79,8 @@ RegisterCommand({
     local addSuccess = targetPlayerClass.group.add(group)
     
     if not addSuccess then
-        print("❌ Erro ao adicionar grupo!")
         return
     end
-
-    print("✅ Grupo adicionado com sucesso!")
         
     -- Sincronizar grupos após adição
     local groupSyncEvent = ReplicatedStorage:WaitForChild("GroupSyncEvent")
@@ -93,9 +90,6 @@ RegisterCommand({
     
     -- Obter o novo grupo mais alto usando a função centralizada
     local highestGroup = updatedPlayerClass.group.getHighestGroup()
-    
-    print("🔄 Grupos após adição:", game:GetService("HttpService"):JSONEncode(updatedPlayerData.groups))
-    print("🏆 Grupo mais alto:", highestGroup)
     
     -- Enviar atualização para todos os clientes
     groupSyncEvent:FireAllClients(targetPlayer, highestGroup)

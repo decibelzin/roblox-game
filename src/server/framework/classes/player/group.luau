@@ -4,10 +4,18 @@ local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.ty
 local storage = game:GetService("DataStoreService"):GetDataStore(STORAGE_KEY)
 local isOnlinePlayer = require("../../utils/check-player-is-online")
 local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Evento para atualização individual de grupos
 local event = Instance.new("RemoteEvent")
 event.Name = "framework:update.player.groups"
-event.Parent = game.ReplicatedStorage
+event.Parent = ReplicatedStorage
+
+-- Criar RemoteEvent para sincronização de grupos
+local groupSyncEvent = Instance.new("RemoteEvent")
+groupSyncEvent.Name = "GroupSyncEvent"
+groupSyncEvent.Parent = ReplicatedStorage
 
 --- Valida se uma string é segura para o DataStore
 local function isValidString(str: string): boolean
@@ -83,23 +91,55 @@ local function getHighestGroup(playerGroups: {[string]: boolean})
     return highestGroup
 end
 
+--- Função para listar todos os grupos de um jogador
+local function listPlayerGroups(playerGroups: {[string]: boolean})
+    if not playerGroups or type(playerGroups) ~= "table" then
+        return {}
+    end
+    
+    local groups = {}
+    for groupName, hasGroup in pairs(playerGroups) do
+        if hasGroup then
+            table.insert(groups, groupName)
+        end
+    end
+    return groups
+end
+
+-- Módulo de sincronização de grupos
+local GroupSync = {}
+
+--- Sincroniza grupos de um jogador específico
+function GroupSync.syncPlayerGroups(player: Player, playerClass: PlayerClass, playerGroups: {[string]: boolean})
+    local highestGroup = playerClass.group.getHighestGroup()
+    local allGroups = listPlayerGroups(playerGroups)
+    
+    -- Fire para o cliente específico
+    groupSyncEvent:FireClient(player, player.Name, highestGroup, allGroups)
+end
+
+--- Sincroniza grupos de todos os jogadores
+function GroupSync.syncAllPlayerGroups(playerModule)
+    for _, player in pairs(Players:GetPlayers()) do
+        local playerData, playerClass = playerModule.get(player, false)
+        if playerData then
+            GroupSync.syncPlayerGroups(player, playerClass, playerData.groups)
+        end
+    end
+end
+
 return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
     local self = {}
 
     function self.add(group: string)
-        print("➕ Tentando adicionar grupo:", group, "para", cache.player.Name)
-        
         if not isValidGroup(group) then
-            print("❌ Grupo inválido:", group)
             return false
         end
 
         local isAffiliated = isAlreadyAffiliated(cache.groups, group)
 
         if isAffiliated then
-            print("🔄 Removendo grupo anterior:", isAffiliated)
             if not self.remove(isAffiliated) then
-                print("❌ Erro ao remover grupo anterior")
                 return false
             end
         end
@@ -109,22 +149,17 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         
         -- Validar antes de salvar
         if not validateGroupsData(groups) then
-            print("❌ Dados de grupos inválidos")
             return false
         end
         
-        print("💾 Salvando grupos no DataStore:", HttpService:JSONEncode(groups))
-
         local success = pcall(function()
             return storage:SetAsync(cache.player.UserId, groups)
         end)
 
         if not success then
-            print("❌ Erro ao salvar no DataStore")
             return false
         end
         
-        print("✅ Dados salvos com sucesso no DataStore")
         cache.groups = groups
 
         if isOnlinePlayer(cache.player) then
@@ -135,10 +170,7 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
     end
 
     function self.remove(group: string)
-        print("➖ Removendo grupo:", group, "de", cache.player.Name)
-        
         if not isValidString(group) then
-            print("❌ Nome de grupo inválido:", group)
             return false
         end
         
@@ -150,11 +182,9 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         end)
 
         if not success then
-            print("❌ Erro ao remover do DataStore")
             return false
         end
 
-        print("✅ Grupo removido com sucesso do DataStore")
         cache.groups = groups
         
         if isOnlinePlayer(cache.player) then
@@ -187,6 +217,10 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
 
     function self.getHighestGroup(): string?
         return getHighestGroup(cache.groups)
+    end
+
+    function self.list(): {string}
+        return listPlayerGroups(cache.groups)
     end
 
     return self
