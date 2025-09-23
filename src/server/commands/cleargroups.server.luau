@@ -19,7 +19,6 @@ RegisterCommand({
 
     -- Verificar se o parâmetro foi fornecido
     if not username then
-        print("Uso: /cleargroups <username>")
         return
     end
 
@@ -29,14 +28,12 @@ RegisterCommand({
     end)
 
     if not success then
-        print("Erro: Usuário \"" .. username .. "\" não encontrado!")
         return
     end
 
     -- Verificar se o usuário está online
     local targetPlayer = Players:GetPlayerByUserId(targetUserId)
     if not targetPlayer then
-        print("Erro: Usuário \"" .. username .. "\" não está online!")
         return
     end
 
@@ -52,15 +49,12 @@ RegisterCommand({
     end
     
     if #groupsToRemove == 0 then
-        print("❌ " .. username .. " não possui grupos para remover!")
         return
     end
     
-    print("🗑️ Removendo grupos de " .. username .. ":")
     for _, groupName in ipairs(groupsToRemove) do
         local groupData = GROUPS_CONFIG[groupName]
         local groupDisplayName = groupData and groupData.name or groupName
-        print("  - " .. groupDisplayName .. " (" .. groupName .. ")")
     end
     
     -- Remover todos os grupos
@@ -68,23 +62,19 @@ RegisterCommand({
     for _, groupName in ipairs(groupsToRemove) do
         local removeSuccess = targetPlayerClass.group.remove(groupName)
         if not removeSuccess then
-            print("❌ Erro ao remover grupo: " .. groupName)
             allRemoved = false
         end
     end
     
-    if allRemoved then
-        print("✅ Todos os grupos foram removidos com sucesso!")
-        
-        -- Sincronizar grupos após remoção
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local groupSyncEvent = ReplicatedStorage:WaitForChild("GroupSyncEvent")
-        
-        -- Enviar atualização para todos os clientes (sem grupos)
-        groupSyncEvent:FireAllClients(targetPlayer, nil)
-        
-        print("🔄 Jogador agora não possui grupos")
-    else
-        print("⚠️ Alguns grupos não puderam ser removidos!")
+    if not allRemoved then
+        return
     end
+    
+        
+    -- Sincronizar grupos após remoção
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local groupSyncEvent = ReplicatedStorage:WaitForChild("GroupSyncEvent")
+    
+    -- Enviar atualização para todos os clientes (sem grupos)
+    groupSyncEvent:FireAllClients(targetPlayer, nil)
 end)

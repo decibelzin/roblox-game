@@ -75,7 +75,6 @@ return function()
         local inCache = cache.get(player.UserId)
 
         if inCache then
-            print("💾 Dados encontrados no cache para:", player.Name)
             return PlayerClass.new(inCache)
         end
 

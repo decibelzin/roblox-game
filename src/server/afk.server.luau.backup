@@ -1,3 +1,4 @@
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -14,26 +15,31 @@ end
 
 local function createAFKPart(player)
     if afkParts[player] then 
+        print("afkParts[player]")
         return 
     end
 
     local character = player.Character
     if not character then 
+        print("no character")
         return 
     end
 
     local humanoid = character:FindFirstChild("Humanoid")
     if not humanoid then 
+        print("no humanoid")
         return 
     end
 
     local rootPart = humanoid.RootPart
     if not rootPart then 
+        print("no rootPart")
         return 
     end
 
-    local originalPart = workspace.GERAL:FindFirstChild("zzz")
+    local originalPart = workspace:FindFirstChild("zzz")
     if not originalPart then 
+        print("no originalPart")
         return 
     end
 
@@ -46,6 +52,7 @@ local function createAFKPart(player)
     zzzPart.Parent = workspace
 
     local particleEmitter = zzzPart:FindFirstChildOfClass("ParticleEmitter")
+    print("particleEmitter", particleEmitter)
     if particleEmitter then
         particleEmitter.Enabled = true
     end
@@ -55,6 +62,7 @@ local function createAFKPart(player)
         if zzzPart and zzzPart.Parent and rootPart and rootPart.Parent then
             zzzPart.CFrame = rootPart.CFrame * CFrame.new(0, 4, 0)
         else
+            print("no connection")
             if connection then
                 connection:Disconnect()
                 updateConnections[player] = nil

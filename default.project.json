@@ -22,9 +22,6 @@
     "ServerScriptService": {
       "Server": {
         "$path": "src/server"
-      },
-      "framework": {
-        "$path": "src/server/framework"
       }
     },
     "StarterPlayer": {

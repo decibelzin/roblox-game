@@ -42,3 +42,4 @@ player.CharacterAdded:Connect(function()
 end)
 
 checkInitialFocus()
+

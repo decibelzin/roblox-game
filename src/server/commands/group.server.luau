@@ -78,38 +78,25 @@ RegisterCommand({
     -- Tentar adicionar o grupo
     local addSuccess = targetPlayerClass.group.add(group)
     
-    if addSuccess then
-        print("✅ Grupo adicionado com sucesso!")
-        
-        -- Sincronizar grupos após adição
-        local groupSyncEvent = ReplicatedStorage:WaitForChild("GroupSyncEvent")
-        
-        -- Obter o novo grupo mais alto
-        local priorities = {
-            owner = 4,
-            admin = 3,
-            moderator = 2,
-            ["vip-gold"] = 1
-        }
-        
-        local highestGroup = nil
-        local highestPriority = 0
-        
-        -- Após addSuccess, recarregar os dados atualizados
-        local updatedPlayerData, updatedPlayerClass = PlayerModule.get(targetPlayer, true)
-        for groupName, hasGroup in pairs(updatedPlayerData.groups) do
-            if hasGroup and priorities[groupName] and priorities[groupName] > highestPriority then
-                highestPriority = priorities[groupName]
-                highestGroup = groupName
-            end
-        end
-        
-        print("🔄 Grupos após adição:", game:GetService("HttpService"):JSONEncode(updatedPlayerData.groups))
-        print("🏆 Grupo mais alto:", highestGroup)
-        
-        -- Enviar atualização para todos os clientes
-        groupSyncEvent:FireAllClients(targetPlayer, highestGroup)
-    else
+    if not addSuccess then
         print("❌ Erro ao adicionar grupo!")
+        return
     end
+
+    print("✅ Grupo adicionado com sucesso!")
+        
+    -- Sincronizar grupos após adição
+    local groupSyncEvent = ReplicatedStorage:WaitForChild("GroupSyncEvent")
+    
+    -- Após addSuccess, recarregar os dados atualizados
+    local updatedPlayerData, updatedPlayerClass = PlayerModule.get(targetPlayer, true)
+    
+    -- Obter o novo grupo mais alto usando a função centralizada
+    local highestGroup = updatedPlayerClass.group.getHighestGroup()
+    
+    print("🔄 Grupos após adição:", game:GetService("HttpService"):JSONEncode(updatedPlayerData.groups))
+    print("🏆 Grupo mais alto:", highestGroup)
+    
+    -- Enviar atualização para todos os clientes
+    groupSyncEvent:FireAllClients(targetPlayer, highestGroup)
 end)

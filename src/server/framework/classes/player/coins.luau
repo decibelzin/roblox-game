@@ -1,5 +1,5 @@
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
-local STORAGE_KEY = require(game.ReplicatedStorage.Shared.storage).group
+local STORAGE_KEY = require(game.ReplicatedStorage.Shared.storage).coins
 local database = game:GetService("DataStoreService"):GetDataStore(STORAGE_KEY)
 local isOnlinePlayer = require('../../utils/check-player-is-online')
 

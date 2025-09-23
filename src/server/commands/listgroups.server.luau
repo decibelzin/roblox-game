@@ -4,9 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
-
--- Aguardar o cache global estar disponível
-local globalPlayerModule, globalCache = _G.getSharedPlayerModule and _G.getSharedPlayerModule() or nil, _G.globalCache
+local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
 
 -- Criar RemoteEvent para enviar mensagens do chat
 local chatMessageEvent = ReplicatedStorage:FindFirstChild("ChatMessageEvent")
@@ -14,32 +12,6 @@ if not chatMessageEvent then
     chatMessageEvent = Instance.new("RemoteEvent")
     chatMessageEvent.Name = "ChatMessageEvent"
     chatMessageEvent.Parent = ReplicatedStorage
-end
-
--- Função para obter o grupo mais alto de um jogador
-local function getHighestGroup(playerGroups)
-    if not playerGroups or type(playerGroups) ~= "table" then
-        return nil
-    end
-    
-    local highestGroup = nil
-    local highestPriority = 0
-    
-    local priorities = {
-        owner = 4,
-        admin = 3,
-        moderator = 2,
-        ["vip-gold"] = 1
-    }
-    
-    for groupName, hasGroup in pairs(playerGroups) do
-        if hasGroup and priorities[groupName] and priorities[groupName] > highestPriority then
-            highestPriority = priorities[groupName]
-            highestGroup = groupName
-        end
-    end
-    
-    return highestGroup
 end
 
 -- Função para listar todos os grupos de um jogador
@@ -86,18 +58,17 @@ RegisterCommand({
     local playerGroups = {}
     local groupsList = {}
     
-    if isOnline and globalPlayerModule then
-        -- Se estiver online, usar dados do cache global
-        local playerData = globalPlayerModule.get(targetPlayer, false)
-        if playerData then
+    if isOnline then
+        -- Se estiver online, usar dados do cache
+        local playerData, playerClass = PlayerModule.get(targetPlayer, false)
+        if playerData and playerClass then
             playerGroups = playerData.groups or {}
         end
     else
         -- Se estiver offline, carregar do DataStore
-        if globalPlayerModule then
-            local playerData = globalPlayerModule.fetch(Players:GetPlayerByUserId(targetUserId) or {UserId = targetUserId})
-            playerGroups = playerData.groups or {}
-        end
+        local fakePlayer = {UserId = targetUserId}
+        local playerData = PlayerModule.fetch(fakePlayer)
+        playerGroups = playerData.groups or {}
     end
     
     -- Coletar grupos do jogador
