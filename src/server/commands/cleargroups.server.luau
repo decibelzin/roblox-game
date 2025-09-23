@@ -70,11 +70,6 @@ RegisterCommand({
         return
     end
     
-        
-    -- Sincronizar grupos após remoção
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local groupSyncEvent = ReplicatedStorage:WaitForChild("GroupSyncEvent")
-    
-    -- Enviar atualização para todos os clientes (sem grupos)
-    groupSyncEvent:FireAllClients(targetPlayer, nil)
+    -- O evento framework:update.player.groups já é disparado automaticamente
+    -- pelo método targetPlayerClass.group.remove() quando um grupo é removido
 end)

@@ -81,16 +81,7 @@ RegisterCommand({
     if not addSuccess then
         return
     end
-        
-    -- Sincronizar grupos após adição
-    local groupSyncEvent = ReplicatedStorage:WaitForChild("GroupSyncEvent")
     
-    -- Após addSuccess, recarregar os dados atualizados
-    local updatedPlayerData, updatedPlayerClass = PlayerModule.get(targetPlayer, true)
-    
-    -- Obter o novo grupo mais alto usando a função centralizada
-    local highestGroup = updatedPlayerClass.group.getHighestGroup()
-    
-    -- Enviar atualização para todos os clientes
-    groupSyncEvent:FireAllClients(targetPlayer, highestGroup)
+    -- O evento framework:update.player.groups já é disparado automaticamente
+    -- pelo método targetPlayerClass.group.add() quando um grupo é adicionado
 end)

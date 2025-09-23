@@ -12,11 +12,6 @@ local event = Instance.new("RemoteEvent")
 event.Name = "framework:update.player.groups"
 event.Parent = ReplicatedStorage
 
--- Criar RemoteEvent para sincronização de grupos
-local groupSyncEvent = Instance.new("RemoteEvent")
-groupSyncEvent.Name = "GroupSyncEvent"
-groupSyncEvent.Parent = ReplicatedStorage
-
 --- Valida se uma string é segura para o DataStore
 local function isValidString(str: string): boolean
     if type(str) ~= "string" or #str == 0 or #str > 50 then
@@ -104,28 +99,6 @@ local function listPlayerGroups(playerGroups: {[string]: boolean})
         end
     end
     return groups
-end
-
--- Módulo de sincronização de grupos
-local GroupSync = {}
-
---- Sincroniza grupos de um jogador específico
-function GroupSync.syncPlayerGroups(player: Player, playerClass: PlayerClass, playerGroups: {[string]: boolean})
-    local highestGroup = playerClass.group.getHighestGroup()
-    local allGroups = listPlayerGroups(playerGroups)
-    
-    -- Fire para o cliente específico
-    groupSyncEvent:FireClient(player, player.Name, highestGroup, allGroups)
-end
-
---- Sincroniza grupos de todos os jogadores
-function GroupSync.syncAllPlayerGroups(playerModule)
-    for _, player in pairs(Players:GetPlayers()) do
-        local playerData, playerClass = playerModule.get(player, false)
-        if playerData then
-            GroupSync.syncPlayerGroups(player, playerClass, playerData.groups)
-        end
-    end
 end
 
 return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
