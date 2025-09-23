@@ -6,6 +6,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
 
+-- Módulos adicionais
+local PLAYTIME_MODULE = require(game.ServerScriptService.Server.framework.modules.playtime)
+
 -- Criar RemoteEvent para enviar mensagens do chat
 local chatMessageEvent = ReplicatedStorage:FindFirstChild("ChatMessageEvent")
 if not chatMessageEvent then
@@ -18,7 +21,7 @@ end
 local function getHighestGroup(playerGroups)
     -- Verificar se playerGroups é uma tabela válida
     if not playerGroups or type(playerGroups) ~= "table" then
-        return nil
+        return "None"
     end
     
     local highestGroup = nil
@@ -39,7 +42,7 @@ local function getHighestGroup(playerGroups)
         end
     end
     
-    return highestGroup
+    return highestGroup or "None"
 end
 
 -- Função para listar todos os grupos de um jogador
@@ -66,6 +69,67 @@ local function getGroupColor(groupName)
     return Color3.fromRGB(255, 255, 255) -- Cor padrão
 end
 
+-- Função para criar/atualizar leaderboard do jogador
+local function setupPlayerLeaderboard(player)
+    -- Aguardar o PlayerGui carregar
+    local playerGui = player:WaitForChild("PlayerGui")
+    
+    -- Criar ou obter leaderstats
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if not leaderstats then
+        leaderstats = Instance.new("Folder")
+        leaderstats.Name = "leaderstats"
+        leaderstats.Parent = player
+    end
+    
+    -- Verificar se a coluna Group já existe
+    local groupValue = leaderstats:FindFirstChild("Group")
+    if not groupValue then
+        -- Criar a coluna Group
+        groupValue = Instance.new("StringValue")
+        groupValue.Name = "Group"
+        groupValue.Value = "None"
+        groupValue.Parent = leaderstats
+    end
+    
+    -- Verificar se a coluna Minutes já existe
+    local minutesValue = leaderstats:FindFirstChild("Minutes")
+    if not minutesValue then
+        -- Criar a coluna Minutes
+        minutesValue = Instance.new("IntValue")
+        minutesValue.Name = "Minutes"
+        minutesValue.Value = 0
+        minutesValue.Parent = leaderstats
+    end
+    
+    -- Função para atualizar os valores
+    local function updateLeaderboard()
+        -- Obter dados do jogador
+        local playerData = PlayerModule.get(player, false)
+        if not playerData then return end
+        
+        -- Atualizar grupo
+        local highestGroup = getHighestGroup(playerData.groups)
+        groupValue.Value = highestGroup
+        
+        -- Atualizar minutos
+        local totalTime, sessionTime = PLAYTIME_MODULE.getCurrentTime(player)
+        local totalMinutes = math.floor((totalTime + sessionTime) / 60)
+        minutesValue.Value = totalMinutes
+    end
+    
+    -- Atualizar imediatamente
+    updateLeaderboard()
+    
+    -- Atualizar a cada 30 segundos
+    spawn(function()
+        while player.Parent do
+            wait(30)
+            updateLeaderboard()
+        end
+    end)
+end
+
 -- Função para aplicar tags ao jogador
 local function applyPlayerTags(player)
     -- Obter dados do player
@@ -87,7 +151,7 @@ local function applyPlayerTags(player)
     
     -- Enviar mensagem de boas-vindas
     local welcomeMessage = string.format("👋 Bem-vindo, %s!", player.Name)
-    if highestGroup then
+    if highestGroup and highestGroup ~= "None" then
         welcomeMessage = welcomeMessage .. string.format(" (Grupo: %s)", highestGroup)
     end
     chatMessageEvent:FireClient(player, welcomeMessage)
@@ -100,5 +164,11 @@ players.PlayerAdded:Connect(function(player)
         
         -- Aplicar tags do jogador
         applyPlayerTags(player)
+        
+        -- Configurar leaderboard com colunas Group e Minutes
+        setupPlayerLeaderboard(player)
     end)
 end)
+
+-- Removido o evento PlayerRemoving que estava causando erro
+-- O sistema de playtime já gerencia isso no arquivo playtime.server.luau

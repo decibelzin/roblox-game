@@ -1,5 +1,5 @@
 return {
-    group = "player.groups.storage",
-    coins = "player.coins.storage",
-    playtime = "player.playtime.storage"
+    group = "player.groups.v2",
+    coins = "player.coins.v2",
+    playtime = "player.playtime.v2"
 }
