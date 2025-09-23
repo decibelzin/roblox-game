@@ -19,16 +19,7 @@ local function isGameOwner(player)
     -- Rank 255 = Owner do grupo do jogo
     return result >= 255
 end
-
--- Função para listar grupos disponíveis
-local function listAvailableGroups()
-    local groups = {}
-    for groupName, groupData in pairs(GROUPS_CONFIG) do
-        table.insert(groups, groupName)
-    end
-    return table.concat(groups, ", ")
-end
-
+ 
 RegisterCommand({
     name = "group",
     description = "Dá um grupo para um usuário",

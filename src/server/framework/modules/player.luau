@@ -49,9 +49,8 @@ return function()
         }
 
         if isOnlinePlayer(player) then
-            if next(data.groups) then
-                remoteEventGroups:FireClient(player, data.groups)
-            end
+            -- Sempre envia os grupos (mesmo vazio) para sincronizar estado inicial no cliente
+            remoteEventGroups:FireClient(player, data.groups)
 
             if data.coins > 0 then
                 remoteEventCoins:FireClient(player, data.coins)

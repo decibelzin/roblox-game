@@ -4,7 +4,7 @@ local database = game:GetService("DataStoreService"):GetDataStore(STORAGE_KEY)
 local isOnlinePlayer = require('../../utils/check-player-is-online')
 
 local event = Instance.new('RemoteEvent')
-event.Name = 'framework:update.player.groups'
+event.Name = 'framework:update.player.coins'
 event.Parent = game.ReplicatedStorage
 
 

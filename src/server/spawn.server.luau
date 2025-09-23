@@ -97,6 +97,9 @@ local function applyPlayerTags(player)
     print("Grupo mais alto:", highestGroup or "Nenhum")
     print("========================")
     
+    -- Criar tag no servidor
+    playerClass.group.updateServerTag()
+    
     -- Enviar mensagem de boas-vindas
     local welcomeMessage = string.format("👋 Bem-vindo, %s!", player.Name)
     if highestGroup and highestGroup ~= "None" then

@@ -8,9 +8,13 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Evento para atualização individual de grupos
-local event = Instance.new("RemoteEvent")
-event.Name = "framework:update.player.groups"
-event.Parent = ReplicatedStorage
+local event = ReplicatedStorage:FindFirstChild("framework:update.player.groups")
+if not event then
+	-- Garante que só exista um RemoteEvent com esse nome
+	event = Instance.new("RemoteEvent")
+	event.Name = "framework:update.player.groups"
+	event.Parent = ReplicatedStorage
+end
 
 --- Valida se uma string é segura para o DataStore
 local function isValidString(str: string): boolean
@@ -104,6 +108,57 @@ end
 return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
     local self = {}
 
+    -- Função para criar/atualizar tag no servidor
+    function self.updateServerTag()
+        if not isOnlinePlayer(cache.player) then
+            return
+        end
+        
+        local character = cache.player.Character
+        if not character then return end
+        
+        local humanoid = character:FindFirstChild("Humanoid")
+        if not humanoid then return end
+        
+        -- Remover tag anterior se existir
+        local existingTag = character:FindFirstChild("GroupTag")
+        if existingTag then
+            existingTag:Destroy()
+        end
+        
+        -- Obter o grupo mais alto
+        local highestGroup = self.getHighestGroup()
+        
+        -- Criar nova tag se tiver grupo
+        if highestGroup then
+            local groupData = GROUPS_CONFIG[highestGroup]
+            local groupColor = groupData and groupData.color or Color3.fromRGB(255, 255, 255)
+            local groupName = groupData and groupData.name or string.upper(highestGroup)
+            
+            local billboardGui = Instance.new("BillboardGui")
+            billboardGui.Name = "GroupTag"
+            billboardGui.Size = UDim2.new(0, 100, 0, 30)
+            billboardGui.StudsOffset = Vector3.new(0, 2.5, 0)
+            billboardGui.Parent = character
+            
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(1, 0, 1, 0)
+            frame.BackgroundTransparency = 1
+            frame.Parent = billboardGui
+            
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1, 0, 1, 0)
+            label.BackgroundTransparency = 1
+            label.Text = groupName
+            label.TextColor3 = groupColor
+            label.TextSize = 16
+            label.Font = Enum.Font.GothamBold
+            label.TextStrokeTransparency = 0
+            label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            label.Parent = frame
+        end
+    end
+
     function self.add(group: string)
         if not isValidGroup(group) then
             return false
@@ -137,6 +192,8 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
 
         if isOnlinePlayer(cache.player) then
             event:FireClient(cache.player, cache.groups)
+            -- Atualizar tag no servidor
+            self.updateServerTag()
         end
 
         return true
@@ -162,6 +219,8 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         
         if isOnlinePlayer(cache.player) then
             event:FireClient(cache.player, cache.groups)
+            -- Atualizar tag no servidor
+            self.updateServerTag()
         end
 
         return true
@@ -194,6 +253,18 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
 
     function self.list(): {string}
         return listPlayerGroups(cache.groups)
+    end
+
+    -- Função para atualizar o leaderboard
+    function self.updateLeaderboard()
+        local leaderstats = cache.player:FindFirstChild("leaderstats")
+        if leaderstats then
+            local groupValue = leaderstats:FindFirstChild("Group")
+            if groupValue then
+                local highestGroup = self.getHighestGroup()
+                groupValue.Value = highestGroup or ''
+            end
+        end
     end
 
     return self
