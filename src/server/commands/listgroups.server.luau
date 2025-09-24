@@ -1,18 +1,10 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"])
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ChatMessage = require(game.ServerScriptService.Server.framework.modules["chat-message"])
 
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
 local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
-
--- Criar RemoteEvent para enviar mensagens do chat
-local chatMessageEvent = ReplicatedStorage:FindFirstChild("ChatMessageEvent")
-if not chatMessageEvent then
-    chatMessageEvent = Instance.new("RemoteEvent")
-    chatMessageEvent.Name = "ChatMessageEvent"
-    chatMessageEvent.Parent = ReplicatedStorage
-end
 
 -- Função para listar todos os grupos de um jogador
 local function listPlayerGroups(playerGroups)
@@ -89,6 +81,6 @@ RegisterCommand({
         chatMessage = "Grupos de " .. username .. statusText .. ": Nenhum"
     end
     
-    -- Enviar mensagem para o cliente via RemoteEvent
-    chatMessageEvent:FireClient(player, chatMessage)
+    -- Enviar mensagem para o cliente via módulo ChatMessage
+    ChatMessage.sendInfo(player, chatMessage)
 end)

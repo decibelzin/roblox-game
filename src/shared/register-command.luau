@@ -11,18 +11,32 @@ type DefCommand = {
 
 type DefCallback = (player: Player, params: {string}, message: string) -> ()
 
--- Função para verificar se o jogador é owner ou admin do grupo do jogo
+-- Função para verificar se o jogador é owner ou admin do jogo
 local function isGameGroupOwnerOrAdmin(player: Player): boolean
-    local success, result = pcall(function()
-        return player:GetRankInGroup(game.CreatorId)
-    end)
-    
-    if not success then
-        return false
+    -- Primeiro, verificar se o jogador é o criador direto do jogo
+    if game.CreatorType == Enum.CreatorType.User then
+        return player.UserId == game.CreatorId
     end
     
-    -- Rank 255 = Owner, Rank 254 = Admin (valores típicos do Roblox)
-    return result >= 254
+    -- Se o jogo pertence a um grupo, verificar o cargo no grupo
+    if game.CreatorType == Enum.CreatorType.Group then
+        local success, roleName = pcall(function()
+            return player:GetRoleInGroup(game.CreatorId)
+        end)
+        
+        if not success or not roleName then
+            return false
+        end
+        
+        -- Verificar se o cargo é owner ou admin
+        local lowerRoleName = string.lower(roleName)
+
+        print(roleName)
+
+        return lowerRoleName == "owner" or lowerRoleName == "admin"
+    end
+    
+    return false
 end
 
 return function(definition: DefCommand, callback: DefCallback)

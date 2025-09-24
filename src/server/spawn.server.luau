@@ -1,26 +1,9 @@
 -- Sistema de Spawn
 local players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Importar o módulo de player para acessar os grupos
 local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
-local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
-
--- Criar RemoteEvent para enviar mensagens do chat
-local chatMessageEvent = ReplicatedStorage:FindFirstChild("ChatMessageEvent")
-if not chatMessageEvent then
-    chatMessageEvent = Instance.new("RemoteEvent")
-    chatMessageEvent.Name = "ChatMessageEvent"
-    chatMessageEvent.Parent = ReplicatedStorage
-end
-
--- Função para obter cor do grupo
-local function getGroupColor(groupName)
-    if groupName and GROUPS_CONFIG[groupName] then
-        return GROUPS_CONFIG[groupName].color
-    end
-    return Color3.fromRGB(255, 255, 255) -- Cor padrão
-end
+local ChatMessage = require(game.ServerScriptService.Server.framework.modules["chat-message"])
 
 -- Função para criar/atualizar leaderboard do jogador
 local function setupPlayerLeaderboard(player)
@@ -72,12 +55,7 @@ local function applyPlayerTags(player)
     local allGroups = playerClass.group.list()
     
     -- Print do JSON dos grupos do jogador
-    print("=== GRUPOS DO JOGADOR ===")
-    print("Jogador:", player.Name)
-    print("JSON dos grupos:", game:GetService("HttpService"):JSONEncode(playerData.groups))
-    print("Grupos ativos:", table.concat(allGroups, ", "))
-    print("Grupo mais alto:", highestGroup or "Nenhum")
-    print("========================")
+    print(player.Name..('(%s) entrou no servidor'):format(highestGroup or 'Nenhum'))
     
     -- Criar tag no servidor
     playerClass.group.updateServerTag()
@@ -87,7 +65,7 @@ local function applyPlayerTags(player)
     if highestGroup and highestGroup ~= "None" then
         welcomeMessage = welcomeMessage .. string.format(" (Grupo: %s)", highestGroup)
     end
-    chatMessageEvent:FireClient(player, welcomeMessage)
+    ChatMessage.sendSuccess(player, welcomeMessage)
 end
 
 -- Eventos

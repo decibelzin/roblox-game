@@ -108,7 +108,6 @@ end
 return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
     local self = {}
 
-    -- Função para criar/atualizar tag no servidor
     function self.updateServerTag()
         if not isOnlinePlayer(cache.player) then
             return
@@ -120,16 +119,13 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         local humanoid = character:FindFirstChild("Humanoid")
         if not humanoid then return end
         
-        -- Remover tag anterior se existir
         local existingTag = character:FindFirstChild("GroupTag")
         if existingTag then
             existingTag:Destroy()
         end
         
-        -- Obter o grupo mais alto
         local highestGroup = self.getHighestGroup()
         
-        -- Criar nova tag se tiver grupo
         if highestGroup then
             local groupData = GROUPS_CONFIG[highestGroup]
             local groupColor = groupData and groupData.color or Color3.fromRGB(255, 255, 255)
@@ -174,8 +170,7 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
 
         local groups = table.clone(cache.groups)
         groups[group] = true
-        
-        -- Validar antes de salvar
+
         if not validateGroupsData(groups) then
             return false
         end
@@ -192,8 +187,8 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
 
         if isOnlinePlayer(cache.player) then
             event:FireClient(cache.player, cache.groups)
-            -- Atualizar tag no servidor
             self.updateServerTag()
+            self.updateLeaderboard()
         end
 
         return true
@@ -219,8 +214,9 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         
         if isOnlinePlayer(cache.player) then
             event:FireClient(cache.player, cache.groups)
-            -- Atualizar tag no servidor
+
             self.updateServerTag()
+            self.updateLeaderboard()
         end
 
         return true
@@ -255,7 +251,6 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         return listPlayerGroups(cache.groups)
     end
 
-    -- Função para atualizar o leaderboard
     function self.updateLeaderboard()
         local leaderstats = cache.player:FindFirstChild("leaderstats")
         if leaderstats then
