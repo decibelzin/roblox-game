@@ -12,9 +12,6 @@
       "ChatMessageEvent": {
         "$className": "RemoteEvent"
       },
-      "CoinNotification": {
-        "$className": "RemoteEvent"
-      },
       "GroupSyncEvent": {
         "$className": "RemoteEvent"
       }

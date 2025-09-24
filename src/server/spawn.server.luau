@@ -6,9 +6,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
 local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
 
--- Módulos adicionais
-local PLAYTIME_MODULE = require(game.ServerScriptService.Server.framework.modules.playtime)
-
 -- Criar RemoteEvent para enviar mensagens do chat
 local chatMessageEvent = ReplicatedStorage:FindFirstChild("ChatMessageEvent")
 if not chatMessageEvent then
@@ -48,16 +45,6 @@ local function setupPlayerLeaderboard(player)
         groupValue.Parent = leaderstats
     end
     
-    -- Verificar se a coluna Minutes já existe
-    local minutesValue = leaderstats:FindFirstChild("Minutes")
-    if not minutesValue then
-        -- Criar a coluna Minutes
-        minutesValue = Instance.new("IntValue")
-        minutesValue.Name = "Minutes"
-        minutesValue.Value = 0
-        minutesValue.Parent = leaderstats
-    end
-    
     -- Função para atualizar os valores
     local function updateLeaderboard()
         -- Obter dados do jogador
@@ -68,11 +55,6 @@ local function setupPlayerLeaderboard(player)
         local highestGroup = playerClass.group.getHighestGroup()
 
         groupValue.Value = highestGroup or ''
-        
-        -- Atualizar minutos
-        local totalTime, sessionTime = PLAYTIME_MODULE.getCurrentTime(player)
-        local totalMinutes = math.floor((totalTime + sessionTime) / 60)
-        minutesValue.Value = totalMinutes
     end
 
     updateLeaderboard()
@@ -116,10 +98,7 @@ players.PlayerAdded:Connect(function(player)
         -- Aplicar tags do jogador
         applyPlayerTags(player)
         
-        -- Configurar leaderboard com colunas Group e Minutes
+        -- Configurar leaderboard com coluna Group
         setupPlayerLeaderboard(player)
     end)
 end)
-
--- Removido o evento PlayerRemoving que estava causando erro
--- O sistema de playtime já gerencia isso no arquivo playtime.server.luau
