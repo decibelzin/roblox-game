@@ -1,5 +1,4 @@
 -- Sistema de Spawn
-local players = game:GetService("Players")
 
 -- Nota: As funcionalidades de leaderboard e tags dos jogadores
 -- foram movidas para arquivos separados:

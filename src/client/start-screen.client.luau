@@ -9,6 +9,9 @@ local camera = workspace.CurrentCamera
 local uiActive = true
 local scriptInitialized = false -- Previne execuções múltiplas
 
+-- Efeito de blur
+local blurEffect = nil
+
 -- Posições da câmera para transições (coordenadas absolutas)
 local cameraPositions = {
     Vector3.new(2397.686, -38.726, 47219.496),  -- Posição 1
@@ -33,6 +36,23 @@ local function enableMovement()
     if humanoid then
         humanoid.WalkSpeed = 16
         humanoid.JumpPower = 50
+    end
+end
+
+-- Adiciona blur leve na câmera
+local function addBlur()
+    if not blurEffect then
+        blurEffect = Instance.new("BlurEffect")
+        blurEffect.Size = 8 -- Blur leve
+        blurEffect.Parent = camera
+    end
+end
+
+-- Remove blur da câmera
+local function removeBlur()
+    if blurEffect then
+        blurEffect:Destroy()
+        blurEffect = nil
     end
 end
 
@@ -110,6 +130,7 @@ end
 -- Restaura câmera normal
 local function restoreCamera()
     stopCameraTransitions()
+    removeBlur()
     camera.CameraType = Enum.CameraType.Custom
     camera.FieldOfView = 70
 end
@@ -156,6 +177,7 @@ local function init()
     
     disableMovement()
     hideUI()
+    addBlur()
     setupInitialCamera()
     connectPlayButton()
     

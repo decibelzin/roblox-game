@@ -1,7 +1,6 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"])
 local Players = game:GetService("Players")
 local ChatMessage = require(game.ServerScriptService.Server.framework.modules["chat-message"])
-local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
 local UserIdModule = require(game.ServerScriptService.Server.framework.modules["user-id"])
 
 RegisterCommand({
