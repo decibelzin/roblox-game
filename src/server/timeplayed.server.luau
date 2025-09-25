@@ -21,24 +21,13 @@ end
 
 print("✅ ScoreBlock encontrado")
 
--- Inicializar o sistema refatorado
+-- Inicializar o sistema
 local success, err = pcall(function()
-    require(script.Parent.timeplayed.init)
+    require(script.Parent.timeplayed.class)
 end)
 
 if success then
-    print("🚀 Sistema TimePlayedLeaderboard refatorado inicializado com sucesso!")
+    print("🚀 Sistema TimePlayedLeaderboard inicializado com sucesso!")
 else
-    warn("❌ Erro ao inicializar TimePlayedLeaderboard refatorado:", err)
-    -- Fallback para o sistema antigo se necessário
-    print("🔄 Tentando fallback para sistema antigo...")
-    local fallbackSuccess, fallbackErr = pcall(function()
-        require(script.Parent.timeplayed.class)
-    end)
-    
-    if fallbackSuccess then
-        print("🚀 Sistema TimePlayedLeaderboard (antigo) inicializado como fallback!")
-    else
-        warn("❌ Erro no fallback:", fallbackErr)
-    end
+    warn("❌ Erro ao inicializar TimePlayedLeaderboard:", err)
 end 
