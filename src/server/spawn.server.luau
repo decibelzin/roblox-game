@@ -44,8 +44,16 @@ local function setupPlayerLeaderboard(player)
         local playerData, playerClass = PlayerModule.get(player, false)
         if not playerData then return end
         
-        -- Atualizar User ID
-        userIdValue.Value = playerData.userId or 0
+        -- Atualizar User ID (garantir que seja um número válido)
+        local userId = playerData.userId
+        if type(userId) == "number" and userId > 0 then
+            userIdValue.Value = userId
+        else
+            userIdValue.Value = 0
+            if userId ~= 0 then
+                warn("⚠️ User ID inválido para jogador:", player.Name, "- Valor:", userId)
+            end
+        end
         
         -- Atualizar grupo
         local highestGroup = playerClass.group.getHighestGroup()
@@ -64,7 +72,10 @@ local function applyPlayerTags(player)
     local highestGroup = playerClass.group.getHighestGroup()
     
     -- Print com User ID e grupo do jogador
-    local userIdText = playerData.userId and (" [ID: " .. playerData.userId .. "]") or ""
+    local userIdText = ""
+    if playerData.userId and type(playerData.userId) == "number" and playerData.userId > 0 then
+        userIdText = " [ID: " .. playerData.userId .. "]"
+    end
     print(player.Name .. userIdText .. (' (%s) entrou no servidor'):format(highestGroup or 'Nenhum'))
     
     -- Criar tag no servidor
@@ -72,7 +83,7 @@ local function applyPlayerTags(player)
     
     -- Enviar mensagem de boas-vindas
     local welcomeMessage = string.format("👋 Bem-vindo, %s!", player.Name)
-    if playerData.userId then
+    if playerData.userId and type(playerData.userId) == "number" and playerData.userId > 0 then
         welcomeMessage = welcomeMessage .. string.format(" [ID: %d]", playerData.userId)
     end
     if highestGroup and highestGroup ~= "None" then
