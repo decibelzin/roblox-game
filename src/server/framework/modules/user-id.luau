@@ -12,6 +12,37 @@ local cacheInitialized = false
 
 local UserIdModule = {}
 
+--- Obtém o nome de usuário usando a API REST do Roblox
+function UserIdModule.getUsername(robloxUserId: number): string?
+    if not robloxUserId or robloxUserId <= 0 then
+        return nil
+    end
+    
+    -- Tentativa 1: API REST do Roblox
+    local httpSuccess, httpResult = pcall(function()
+        local HttpService = game:GetService("HttpService")
+        local url = "https://users.roblox.com/v1/users/" .. robloxUserId
+        local response = HttpService:GetAsync(url)
+        local data = HttpService:JSONDecode(response)
+        return data.name
+    end)
+    
+    if httpSuccess and httpResult and httpResult ~= "" then
+        return httpResult
+    end
+    
+    -- Tentativa 2: API interna como fallback
+    local apiSuccess, apiResult = pcall(function()
+        return game:GetService("Players"):GetNameFromUserIdAsync(robloxUserId)
+    end)
+    
+    if apiSuccess and apiResult and apiResult ~= "" then
+        return apiResult
+    end
+    
+    return nil
+end
+
 --- Inicializa o cache usando o contador como base
 local function initializeUsedIdsCache()
     if cacheInitialized then
@@ -179,70 +210,118 @@ function UserIdModule.runDiagnostics(): {success: boolean, message: string, deta
     }
 end
 
---- Altera o User ID de um jogador específico (função administrativa)
+--- Busca o Roblox ID que possui um User ID específico
+function UserIdModule.findRobloxIdByUserId(targetUserId: number): number?
+    local success, robloxId = pcall(function()
+        local pages = userIdDataStore:ListKeysAsync()
+        repeat
+            local keys = pages:GetCurrentPage()
+            for _, keyInfo in pairs(keys) do
+                local existingUserId = userIdDataStore:GetAsync(keyInfo.KeyName)
+                if existingUserId == targetUserId then
+                    return tonumber(keyInfo.KeyName)
+                end
+            end
+            if not pages.IsFinished then
+                pages:AdvanceToNextPageAsync()
+            end
+        until pages.IsFinished
+        return nil
+    end)
+    
+    return success and robloxId or nil
+end
+
+--- Verifica se um User ID já está em uso
+function UserIdModule.isUserIdInUse(userId: number): boolean
+    if usedIdsCache[userId] then
+        return true
+    end
+    
+    return UserIdModule.findRobloxIdByUserId(userId) ~= nil
+end
+
+--- Obtém o nome do jogador que possui um User ID específico
+function UserIdModule.getPlayerNameByUserId(userId: number): string?
+    local robloxId = UserIdModule.findRobloxIdByUserId(userId)
+    if not robloxId then
+        return nil
+    end
+    
+    -- Verificar se está online
+    local Players = game:GetService("Players")
+    local onlinePlayer = Players:GetPlayerByUserId(robloxId)
+    if onlinePlayer then
+        return onlinePlayer.Name
+    end
+    
+    -- Buscar nome offline
+    return UserIdModule.getUsername(robloxId)
+end
+
+--- Atualiza o leaderboard de um jogador online
+function UserIdModule.updatePlayerLeaderboard(robloxUserId: number, newUserId: number)
+    local Players = game:GetService("Players")
+    local player = Players:GetPlayerByUserId(robloxUserId)
+    if not player then return end
+    
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if not leaderstats then return end
+    
+    local userIdValue = leaderstats:FindFirstChild("ID")
+    if userIdValue and userIdValue:IsA("IntValue") then
+        userIdValue.Value = newUserId
+    end
+end
+
+--- Altera o User ID de um jogador específico
 function UserIdModule.changeUserId(robloxUserId: number, newUserId: number): boolean
-    if not robloxUserId or type(robloxUserId) ~= "number" or robloxUserId <= 0 then
-        warn("❌ Roblox User ID inválido fornecido:", robloxUserId)
+    -- Validações
+    if not robloxUserId or robloxUserId <= 0 then
+        warn("❌ Roblox User ID inválido:", robloxUserId)
         return false
     end
     
-    if not newUserId or type(newUserId) ~= "number" or newUserId <= 0 then
-        warn("❌ Novo User ID inválido fornecido:", newUserId)
+    if not newUserId or newUserId <= 0 then
+        warn("❌ Novo User ID inválido:", newUserId)
         return false
     end
     
-    -- Inicializar cache se necessário
-    initializeUsedIdsCache()
-    
-    -- Verificar se o novo ID já está em uso
-    local function isIdInUse(userId)
-        -- Se está no cache, definitivamente está em uso
-        if usedIdsCache[userId] then
-            return true
-        end
-        
-        -- Se o ID é menor ou igual ao contador, está em uso
-        local currentCounter = UserIdModule.getCurrentCounter() or 0
-        if userId <= currentCounter then
-            return true
-        end
-        
-        return false
-    end
-    
-    if isIdInUse(newUserId) then
-        -- Verificar se é o mesmo jogador (permitir manter o mesmo ID)
+    -- Verificar se o novo ID já está em uso por outro jogador
+    if UserIdModule.isUserIdInUse(newUserId) then
         local currentUserId = UserIdModule.getUserIdByRobloxId(robloxUserId)
         if currentUserId ~= newUserId then
-            warn("❌ User ID", newUserId, "já está em uso por outro jogador")
+            local conflictingPlayerName = UserIdModule.getPlayerNameByUserId(newUserId)
+            local errorMessage = "❌ User ID " .. newUserId .. " já está em uso"
+            if conflictingPlayerName then
+                errorMessage = errorMessage .. " por " .. conflictingPlayerName
+            end
+            warn(errorMessage)
             return false
         end
     end
     
-    -- Remover ID antigo do cache (se existir)
+    -- Salvar alteração no DataStore
+    local success = pcall(function()
+        userIdDataStore:SetAsync(tostring(robloxUserId), newUserId)
+    end)
+    
+    if not success then
+        warn("❌ Erro ao salvar User ID no DataStore")
+        return false
+    end
+    
+    -- Atualizar caches
     local oldUserId = UserIdModule.getUserIdByRobloxId(robloxUserId)
     if oldUserId then
         usedIdsCache[oldUserId] = nil
     end
-    
-    -- Alterar o User ID do jogador
-    local saveSuccess = pcall(function()
-        userIdDataStore:SetAsync(tostring(robloxUserId), newUserId)
-    end)
-    
-    if not saveSuccess then
-        warn("❌ Erro ao alterar User ID para jogador com Roblox ID:", robloxUserId)
-        -- Restaurar cache se falhou
-        if oldUserId then
-            usedIdsCache[oldUserId] = true
-        end
-        return false
-    end
-    
-    -- Atualizar cache com novo ID
     usedIdsCache[newUserId] = true
     
-    print("✅ User ID alterado com sucesso - Roblox ID:", robloxUserId, "Novo User ID:", newUserId)
+    -- Atualizar leaderboard se jogador estiver online
+    UserIdModule.updatePlayerLeaderboard(robloxUserId, newUserId)
+    
+    print("✅ User ID alterado:", robloxUserId, "->", newUserId)
     return true
 end
 
