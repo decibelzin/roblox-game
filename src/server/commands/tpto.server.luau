@@ -3,16 +3,7 @@ local Players = game:GetService("Players")
 local ChatMessage = require(game.ServerScriptService.Server.framework.modules["chat-message"])
 local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
 
--- Função para encontrar jogador por User ID customizado
-local function findPlayerByUserId(userId)
-    for _, player in pairs(Players:GetPlayers()) do
-        local playerData, playerClass = PlayerModule.get(player, false)
-        if playerData and playerData.userId == userId then
-            return player
-        end
-    end
-    return nil
-end
+
 
 RegisterCommand({
     name = "tpto",
@@ -35,7 +26,7 @@ RegisterCommand({
     local userId = tonumber(targetInput)
     if userId then
         -- Buscar por User ID customizado
-        target = findPlayerByUserId(userId)
+        target = PlayerModule.getPlayerByUserId(userId)
         searchMethod = "ID " .. userId
     else
         -- Buscar por nome de jogador

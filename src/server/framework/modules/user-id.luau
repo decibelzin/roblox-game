@@ -6,7 +6,27 @@ local counterDataStore = DataStoreService:GetDataStore(STORAGE_DEFINITIONS.userI
 
 local COUNTER_KEY = "nextUserId"
 
+-- Cache simples para IDs em uso
+local usedIdsCache = {}
+local cacheInitialized = false
+
 local UserIdModule = {}
+
+--- Inicializa o cache usando o contador como base
+local function initializeUsedIdsCache()
+    if cacheInitialized then
+        return
+    end
+    
+    print("🔄 Inicializando cache de User IDs...")
+    
+    -- Obter o contador atual para saber quais IDs já foram usados
+    local currentCounter = UserIdModule.getCurrentCounter() or 0
+    print("📊 Contador atual:", currentCounter, "- IDs 1 a", currentCounter, "estão em uso")
+    
+    cacheInitialized = true
+    print("✅ Cache inicializado baseado no contador")
+end
 
 --- Obtém o próximo ID disponível e incrementa o contador de forma atômica
 local function getNextUserId()
@@ -28,6 +48,9 @@ end
 
 --- Obtém ou cria um User ID para um jogador
 function UserIdModule.getOrCreateUserId(player: Player): number?
+    -- Inicializar cache se necessário
+    initializeUsedIdsCache()
+    
     -- Validar se o player é válido
     if not player or not player.UserId then
         warn("❌ Player inválido fornecido para getOrCreateUserId")
@@ -62,6 +85,9 @@ function UserIdModule.getOrCreateUserId(player: Player): number?
         warn("❌ Erro ao salvar User ID para jogador:", player.Name)
         return nil
     end
+    
+    -- Atualizar cache
+    usedIdsCache[newId] = true
     
     print("✅ Novo User ID criado para", player.Name, "- ID:", newId)
     return newId
@@ -153,4 +179,73 @@ function UserIdModule.runDiagnostics(): {success: boolean, message: string, deta
     }
 end
 
-return UserIdModule 
+--- Altera o User ID de um jogador específico (função administrativa)
+function UserIdModule.changeUserId(robloxUserId: number, newUserId: number): boolean
+    if not robloxUserId or type(robloxUserId) ~= "number" or robloxUserId <= 0 then
+        warn("❌ Roblox User ID inválido fornecido:", robloxUserId)
+        return false
+    end
+    
+    if not newUserId or type(newUserId) ~= "number" or newUserId <= 0 then
+        warn("❌ Novo User ID inválido fornecido:", newUserId)
+        return false
+    end
+    
+    -- Inicializar cache se necessário
+    initializeUsedIdsCache()
+    
+    -- Verificar se o novo ID já está em uso
+    local function isIdInUse(userId)
+        -- Se está no cache, definitivamente está em uso
+        if usedIdsCache[userId] then
+            return true
+        end
+        
+        -- Se o ID é menor ou igual ao contador, está em uso
+        local currentCounter = UserIdModule.getCurrentCounter() or 0
+        if userId <= currentCounter then
+            return true
+        end
+        
+        return false
+    end
+    
+    if isIdInUse(newUserId) then
+        -- Verificar se é o mesmo jogador (permitir manter o mesmo ID)
+        local currentUserId = UserIdModule.getUserIdByRobloxId(robloxUserId)
+        if currentUserId ~= newUserId then
+            warn("❌ User ID", newUserId, "já está em uso por outro jogador")
+            return false
+        end
+    end
+    
+    -- Remover ID antigo do cache (se existir)
+    local oldUserId = UserIdModule.getUserIdByRobloxId(robloxUserId)
+    if oldUserId then
+        usedIdsCache[oldUserId] = nil
+    end
+    
+    -- Alterar o User ID do jogador
+    local saveSuccess = pcall(function()
+        userIdDataStore:SetAsync(tostring(robloxUserId), newUserId)
+    end)
+    
+    if not saveSuccess then
+        warn("❌ Erro ao alterar User ID para jogador com Roblox ID:", robloxUserId)
+        -- Restaurar cache se falhou
+        if oldUserId then
+            usedIdsCache[oldUserId] = true
+        end
+        return false
+    end
+    
+    -- Atualizar cache com novo ID
+    usedIdsCache[newUserId] = true
+    
+    print("✅ User ID alterado com sucesso - Roblox ID:", robloxUserId, "Novo User ID:", newUserId)
+    return true
+end
+
+
+
+return UserIdModule

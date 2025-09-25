@@ -11,9 +11,26 @@ local memory = require("../classes/cache")
 local isOnlinePlayer = require("../utils/check-player-is-online")
 local cache: memory.Cache<PLAYER_DEFINITION.DefPlayerSchema> = require("../classes/cache").new("player-data")
 
+-- Cache reverso para mapear User ID customizado -> Player (performance otimizada)
+local userIdToPlayerCache = {}
+
 local remoteEventGroups = Instance.new("RemoteEvent")
 remoteEventGroups.Name = "framework:update.player.groups"
 remoteEventGroups.Parent = game.ReplicatedStorage
+
+-- Limpar cache reverso quando jogadores saem (evitar vazamentos de memória)
+local Players = game:GetService("Players")
+Players.PlayerRemoving:Connect(function(player)
+    -- Remover do cache reverso
+    for userId, cachedPlayer in pairs(userIdToPlayerCache) do
+        if cachedPlayer == player then
+            userIdToPlayerCache[userId] = nil
+            break
+        end
+    end
+end)
+
+
 
 return function()
     local self = {}
@@ -80,11 +97,41 @@ return function()
 
         local data = self.fetch(player)
 
+        -- Atualizar cache reverso se o jogador tem User ID customizado
+        if data.userId and data.userId > 0 then
+            userIdToPlayerCache[data.userId] = player
+        end
+
         if not insertCache then
             return PlayerClass.new(data)
         end
 
         return PlayerClass.new(cache.set(player.UserId, data))
+    end
+
+    --- Encontra um jogador online pelo User ID customizado (otimizado com cache)
+    function self.getPlayerByUserId(userId: number): Player?
+        if not userId or type(userId) ~= "number" or userId <= 0 then
+            return nil
+        end
+        
+        -- Primeiro, verificar no cache reverso (O(1))
+        local cachedPlayer = userIdToPlayerCache[userId]
+        if cachedPlayer then
+            local Players = game:GetService("Players")
+            -- Verificar se o jogador ainda está online
+            if Players:FindFirstChild(cachedPlayer.Name) then
+                return cachedPlayer
+            else
+                -- Jogador saiu, limpar cache
+                userIdToPlayerCache[userId] = nil
+            end
+        end
+        
+        -- Se não está no cache, provavelmente o jogador não está online
+        -- ou ainda não teve seus dados carregados
+        
+        return nil
     end
 
     return self
