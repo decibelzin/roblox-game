@@ -18,6 +18,16 @@ local function setupPlayerLeaderboard(player)
         leaderstats.Parent = player
     end
     
+    -- Verificar se a coluna User ID já existe
+    local userIdValue = leaderstats:FindFirstChild("ID")
+    if not userIdValue then
+        -- Criar a coluna User ID
+        userIdValue = Instance.new("IntValue")
+        userIdValue.Name = "ID"
+        userIdValue.Value = 0
+        userIdValue.Parent = leaderstats
+    end
+    
     -- Verificar se a coluna Group já existe
     local groupValue = leaderstats:FindFirstChild("Group")
     if not groupValue then
@@ -34,9 +44,11 @@ local function setupPlayerLeaderboard(player)
         local playerData, playerClass = PlayerModule.get(player, false)
         if not playerData then return end
         
+        -- Atualizar User ID
+        userIdValue.Value = playerData.userId or 0
+        
         -- Atualizar grupo
         local highestGroup = playerClass.group.getHighestGroup()
-
         groupValue.Value = highestGroup or ''
     end
 
@@ -51,14 +63,18 @@ local function applyPlayerTags(player)
     -- Obter o grupo mais alto
     local highestGroup = playerClass.group.getHighestGroup()
     
-    -- Print do JSON dos grupos do jogador
-    print(player.Name..('(%s) entrou no servidor'):format(highestGroup or 'Nenhum'))
+    -- Print com User ID e grupo do jogador
+    local userIdText = playerData.userId and (" [ID: " .. playerData.userId .. "]") or ""
+    print(player.Name .. userIdText .. (' (%s) entrou no servidor'):format(highestGroup or 'Nenhum'))
     
     -- Criar tag no servidor
     playerClass.group.updateServerTag()
     
     -- Enviar mensagem de boas-vindas
     local welcomeMessage = string.format("👋 Bem-vindo, %s!", player.Name)
+    if playerData.userId then
+        welcomeMessage = welcomeMessage .. string.format(" [ID: %d]", playerData.userId)
+    end
     if highestGroup and highestGroup ~= "None" then
         welcomeMessage = welcomeMessage .. string.format(" (Grupo: %s)", highestGroup)
     end
@@ -73,7 +89,7 @@ players.PlayerAdded:Connect(function(player)
         -- Aplicar tags do jogador
         applyPlayerTags(player)
         
-        -- Configurar leaderboard com coluna Group
+        -- Configurar leaderboard com colunas ID e Group
         setupPlayerLeaderboard(player)
     end)
 end)

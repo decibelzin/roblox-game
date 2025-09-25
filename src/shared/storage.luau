@@ -1,3 +1,5 @@
 return {
-    group = "player.groups"
+    group = "player.groups",
+    userId = "player.userIds",
+    userIdCounter = "system.userIdCounter"
 }

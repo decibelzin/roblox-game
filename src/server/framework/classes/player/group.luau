@@ -260,6 +260,13 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
     function self.updateLeaderboard()
         local leaderstats = cache.player:FindFirstChild("leaderstats")
         if leaderstats then
+            -- Atualizar User ID
+            local userIdValue = leaderstats:FindFirstChild("ID")
+            if userIdValue then
+                userIdValue.Value = cache.userId or 0
+            end
+            
+            -- Atualizar grupo
             local groupValue = leaderstats:FindFirstChild("Group")
             if groupValue then
                 local highestGroup = self.getHighestGroup()

@@ -6,7 +6,7 @@ local PlayerModule = require(game.ServerScriptService.Server.framework.modules.p
 -- Função para encontrar jogador por User ID customizado
 local function findPlayerByUserId(userId)
     for _, player in pairs(Players:GetPlayers()) do
-        local playerData, playerClass = PlayerModule.get(player, false)
+        local playerData, _ = PlayerModule.get(player, false)
         if playerData and playerData.userId == userId then
             return player
         end
@@ -15,16 +15,16 @@ local function findPlayerByUserId(userId)
 end
 
 RegisterCommand({
-    name = "tpto",
-    description = "Teleporta para um jogador (nome ou ID)",
-    aliases = { "tp" },
+    name = "tptome",
+    description = "Teleporta um jogador até você (nome ou ID)",
+    aliases = { "bring", "summon" },
     permissions = { "owner", "admin", "moderator" }
 }, function(player, params, message)
     local targetInput = params[1]
     
     -- Verifica se foi fornecido um parâmetro
     if not targetInput then
-        ChatMessage.sendError(player, "❌ Uso: /tpto <nome ou ID>")
+        ChatMessage.sendError(player, "❌ Uso: /tptome <nome ou ID>")
         return
     end
     
@@ -49,10 +49,9 @@ RegisterCommand({
         return
     end
     
-    -- Verifica se o jogador alvo tem um personagem
-    local targetCharacter = target.Character
-    if not targetCharacter then
-        ChatMessage.sendError(player, "❌ " .. target.Name .. " não tem um personagem ativo!")
+    -- Verificar se não está tentando teleportar a si mesmo
+    if target == player then
+        ChatMessage.sendError(player, "❌ Você não pode teleportar a si mesmo!")
         return
     end
     
@@ -63,25 +62,42 @@ RegisterCommand({
         return
     end
     
-    local humanoidRootPart = playerCharacter:FindFirstChild("HumanoidRootPart")
+    -- Verifica se o jogador alvo tem um personagem
+    local targetCharacter = target.Character
+    if not targetCharacter then
+        ChatMessage.sendError(player, "❌ " .. target.Name .. " não tem um personagem ativo!")
+        return
+    end
+    
+    local playerRootPart = playerCharacter:FindFirstChild("HumanoidRootPart")
     local targetRootPart = targetCharacter:FindFirstChild("HumanoidRootPart")
     
-    if not humanoidRootPart or not targetRootPart then
+    if not playerRootPart or not targetRootPart then
         ChatMessage.sendError(player, "❌ Erro ao localizar posições dos personagens!")
         return
     end
     
-    -- Teleporta o jogador para a posição do alvo
-    humanoidRootPart.CFrame = targetRootPart.CFrame
+    -- Teleporta o jogador alvo para a posição do jogador atual
+    targetRootPart.CFrame = playerRootPart.CFrame * CFrame.new(3, 0, 0) -- Offset de 3 studs para não colidir
     
     -- Obter User ID do jogador alvo para mostrar na mensagem
     local targetPlayerData, _ = PlayerModule.get(target, false)
     local targetUserId = targetPlayerData and targetPlayerData.userId
     
-    local successMessage = "✅ Teleportado para " .. target.Name
+    local successMessage = "✅ " .. target.Name
     if targetUserId then
         successMessage = successMessage .. " [ID: " .. targetUserId .. "]"
     end
+    successMessage = successMessage .. " foi teleportado até você!"
     
     ChatMessage.sendSuccess(player, successMessage)
+    
+    -- Notificar o jogador que foi teleportado
+    local notifyMessage = "📍 Você foi teleportado até " .. player.Name
+    local playerData, _ = PlayerModule.get(player, false)
+    if playerData and playerData.userId then
+        notifyMessage = notifyMessage .. " [ID: " .. playerData.userId .. "]"
+    end
+    
+    ChatMessage.sendInfo(target, notifyMessage)
 end)

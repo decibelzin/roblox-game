@@ -1,36 +1,18 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"])
 local Players = game:GetService("Players")
 local ChatMessage = require(game.ServerScriptService.Server.framework.modules["chat-message"])
-
-local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
-local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
 local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
 local UserIdModule = require(game.ServerScriptService.Server.framework.modules["user-id"])
 
--- Função para listar todos os grupos de um jogador
-local function listPlayerGroups(playerGroups)
-    if not playerGroups or type(playerGroups) ~= "table" then
-        return {}
-    end
-    
-    local groups = {}
-    for groupName, hasGroup in pairs(playerGroups) do
-        if hasGroup then
-            table.insert(groups, groupName)
-        end
-    end
-    return groups
-end
-
 RegisterCommand({
-    name = "listgroups",
-    description = "Lista os grupos de um jogador (online ou offline)",
-    aliases = { "lg" },
-    permissions = { "owner", "admin" }
+    name = "userinfo",
+    description = "Mostra informações de um jogador (User ID, grupos, etc.)",
+    aliases = { "info", "ui" },
+    permissions = { "owner", "admin", "moderator" }
 }, function(player, params, message)
     local username = params[1]
 
-    -- Se não especificar usuário, mostrar os próprios grupos
+    -- Se não especificar usuário, mostrar as próprias informações
     if not username then
         username = player.Name
     end
@@ -41,6 +23,7 @@ RegisterCommand({
     end)
 
     if not success then
+        ChatMessage.sendError(player, "❌ Usuário '" .. username .. "' não encontrado!")
         return
     end
 
@@ -48,17 +31,15 @@ RegisterCommand({
     local targetPlayer = Players:GetPlayerByUserId(targetUserId)
     local isOnline = targetPlayer ~= nil
     
-    local playerGroups = {}
-    local groupsList = {}
+    local playerData, playerClass
     local customUserId
+    local playerGroups = {}
     
     if isOnline then
         -- Se estiver online, usar dados do cache
-        local playerData, playerClass = PlayerModule.get(targetPlayer, false)
-        if playerData and playerClass then
-            playerGroups = playerData.groups or {}
-            customUserId = playerData.userId
-        end
+        playerData, playerClass = PlayerModule.get(targetPlayer, false)
+        customUserId = playerData and playerData.userId
+        playerGroups = playerData and playerData.groups or {}
     else
         -- Se estiver offline, buscar dados diretamente dos DataStores
         customUserId = UserIdModule.getUserIdByRobloxId(targetUserId)
@@ -78,24 +59,38 @@ RegisterCommand({
     end
     
     -- Coletar grupos do jogador
-    for groupName, hasGroup in pairs(playerGroups) do
-        if hasGroup and GROUPS_CONFIG[groupName] then
-            local groupData = GROUPS_CONFIG[groupName]
-            table.insert(groupsList, groupData.name)
+    local groupsList = {}
+    if playerGroups then
+        local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
+        for groupName, hasGroup in pairs(playerGroups) do
+            if hasGroup and GROUPS_CONFIG[groupName] then
+                local groupData = GROUPS_CONFIG[groupName]
+                table.insert(groupsList, groupData.name)
+            end
         end
     end
     
-    -- Criar mensagem para o chat
-    local chatMessage
+    -- Criar mensagem de informações
     local statusText = isOnline and " (Online)" or " (Offline)"
-    local userIdText = customUserId and (" [ID: " .. customUserId .. "]") or " [ID: N/A]"
+    local infoMessage = "ℹ️ Informações de " .. username .. statusText .. ":\n"
     
-    if #groupsList > 0 then
-        chatMessage = "Grupos de " .. username .. userIdText .. statusText .. ": " .. table.concat(groupsList, ", ")
+    -- Adicionar User ID
+    if customUserId then
+        infoMessage = infoMessage .. "🆔 User ID: " .. customUserId .. "\n"
     else
-        chatMessage = "Grupos de " .. username .. userIdText .. statusText .. ": Nenhum"
+        infoMessage = infoMessage .. "🆔 User ID: Não atribuído\n"
     end
     
-    -- Enviar mensagem para o cliente via módulo ChatMessage
-    ChatMessage.sendInfo(player, chatMessage)
-end)
+    -- Adicionar Roblox User ID
+    infoMessage = infoMessage .. "🎮 Roblox ID: " .. targetUserId .. "\n"
+    
+    -- Adicionar grupos
+    if #groupsList > 0 then
+        infoMessage = infoMessage .. "👥 Grupos: " .. table.concat(groupsList, ", ")
+    else
+        infoMessage = infoMessage .. "👥 Grupos: Nenhum"
+    end
+    
+    -- Enviar mensagem para o cliente
+    ChatMessage.sendInfo(player, infoMessage)
+end) 
