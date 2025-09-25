@@ -1,10 +1,8 @@
-local STORAGE_KEY = require(game.ReplicatedStorage.Shared.storage).group
-local GROUPS_CONFIG = require(game.ReplicatedStorage.Shared.groups)
+local STORAGE_KEY       = require(game.ReplicatedStorage.Shared.storage).group
+local GROUPS_CONFIG     = require(game.ReplicatedStorage.Shared.groups)
 local PLAYER_DEFINITION = require(game.ReplicatedStorage.Shared.types["player.types"])
-local storage = game:GetService("DataStoreService"):GetDataStore(STORAGE_KEY)
-local isOnlinePlayer = require("../../utils/check-player-is-online")
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
+local storage           = game:GetService("DataStoreService"):GetDataStore(STORAGE_KEY)
+local isOnlinePlayer    = require("../../utils/check-player-is-online")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Evento para atualização individual de grupos
@@ -35,13 +33,13 @@ local function validateGroupsData(groups: {[string]: boolean}): boolean
     if type(groups) ~= "table" then
         return false
     end
-    
+
     for groupName, hasGroup in pairs(groups) do
         if not isValidString(groupName) or type(hasGroup) ~= "boolean" or not GROUPS_CONFIG[groupName] then
             return false
         end
     end
-    
+
     return true
 end
 
@@ -53,11 +51,11 @@ end
 --- Verifica se o player possui um grupo da mesma organização
 local function isAlreadyAffiliated(userGroups: {[string]: boolean}, group: string): string | false
     local detail: GROUPS_CONFIG.DefGroup = GROUPS_CONFIG[group]
-    
+
     if not detail or not detail.organization then
         return false
     end
-    
+
     for currentGroup, _ in pairs(userGroups) do
         local currentData: GROUPS_CONFIG.DefGroup = GROUPS_CONFIG[currentGroup]
         if currentData and currentData.organization and currentData.organization == detail.organization then
@@ -73,10 +71,10 @@ local function getHighestGroup(playerGroups: {[string]: boolean})
     if not playerGroups or type(playerGroups) ~= "table" then
         return nil
     end
-    
+
     local highestGroup = nil
     local highestPriority = 0
-    
+
     for groupName, hasGroup in pairs(playerGroups) do
         if hasGroup then
             local groupData = GROUPS_CONFIG[groupName]
@@ -86,7 +84,7 @@ local function getHighestGroup(playerGroups: {[string]: boolean})
             end
         end
     end
-    
+
     return highestGroup
 end
 
@@ -95,13 +93,14 @@ local function listPlayerGroups(playerGroups: {[string]: boolean})
     if not playerGroups or type(playerGroups) ~= "table" then
         return {}
     end
-    
+
     local groups = {}
     for groupName, hasGroup in pairs(playerGroups) do
         if hasGroup then
             table.insert(groups, groupName)
         end
     end
+
     return groups
 end
 
@@ -112,47 +111,54 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         if not isOnlinePlayer(cache.player) then
             return
         end
-        
+
         local character = cache.player.Character
         if not character then return end
-        
+
         local humanoid = character:FindFirstChild("Humanoid")
         if not humanoid then return end
-        
+
         local existingTag = character:FindFirstChild("GroupTag")
         if existingTag then
             existingTag:Destroy()
         end
-        
+
         local highestGroup = self.getHighestGroup()
-        
-        if highestGroup then
-            local groupData = GROUPS_CONFIG[highestGroup]
-            local groupColor = groupData and groupData.color or Color3.fromRGB(255, 255, 255)
-            local groupName = groupData and groupData.name or string.upper(highestGroup)
-            
-            local billboardGui = Instance.new("BillboardGui")
-            billboardGui.Name = "GroupTag"
-            billboardGui.Size = UDim2.new(0, 100, 0, 30)
-            billboardGui.StudsOffset = Vector3.new(0, 2.5, 0)
-            billboardGui.Parent = character
-            
-            local frame = Instance.new("Frame")
-            frame.Size = UDim2.new(1, 0, 1, 0)
-            frame.BackgroundTransparency = 1
-            frame.Parent = billboardGui
-            
-            local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, 0, 1, 0)
-            label.BackgroundTransparency = 1
-            label.Text = groupName
-            label.TextColor3 = groupColor
-            label.TextSize = 16
-            label.Font = Enum.Font.GothamBold
-            label.TextStrokeTransparency = 0
-            label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            label.Parent = frame
+
+        if not highestGroup then
+            return
         end
+
+        local groupData    = GROUPS_CONFIG[highestGroup]
+        local groupColor   = groupData and groupData.color or Color3.fromRGB(255, 255, 255)
+        local groupName    = groupData and groupData.name  or string.upper(highestGroup)
+        local billboardGui = Instance.new("BillboardGui")
+        local frame        = Instance.new("Frame")
+        local label        = Instance.new("TextLabel")
+
+        billboardGui.Name             = "GroupTag"
+        billboardGui.Size             = UDim2.new(1, 0, 1, 0)
+        billboardGui.Brightness       = 4
+        billboardGui.MaxDistance      = 50
+        billboardGui.StudsOffset      = Vector3.new(0, 2.5, 0)
+        billboardGui.LightInfluence   = 0
+        billboardGui.AlwaysOnTop      = false
+        billboardGui.Parent           = character
+
+        frame.Size                   = UDim2.new(1, 0, 1, 0)
+        frame.BackgroundTransparency = 1
+        frame.Parent                 = billboardGui
+
+        label.Size                   = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text                   = groupName
+        label.TextColor3             = groupColor
+        label.TextSize               = 16
+        label.Font                   = Enum.Font.GothamBold
+        label.TextStrokeTransparency = 0
+        label.TextStrokeColor3       = Color3.fromRGB(0, 0, 0)
+        label.TextScaled             = true
+        label.Parent                 = frame
     end
 
     function self.add(group: string)

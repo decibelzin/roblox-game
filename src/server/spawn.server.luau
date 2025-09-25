@@ -51,9 +51,6 @@ local function applyPlayerTags(player)
     -- Obter o grupo mais alto
     local highestGroup = playerClass.group.getHighestGroup()
     
-    -- Listar todos os grupos
-    local allGroups = playerClass.group.list()
-    
     -- Print do JSON dos grupos do jogador
     print(player.Name..('(%s) entrou no servidor'):format(highestGroup or 'Nenhum'))
     

@@ -1,6 +1,7 @@
 local service = game:GetService("TextChatService")
 local Players = game:GetService("Players")
 local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
+local ChatMessage     = require(game.ServerScriptService.Server.framework.modules["chat-message"])
 
 type DefCommand = {
     name: string,
@@ -11,32 +12,23 @@ type DefCommand = {
 
 type DefCallback = (player: Player, params: {string}, message: string) -> ()
 
--- Função para verificar se o jogador é owner ou admin do jogo
-local function isGameGroupOwnerOrAdmin(player: Player): boolean
-    -- Primeiro, verificar se o jogador é o criador direto do jogo
-    if game.CreatorType == Enum.CreatorType.User then
-        return player.UserId == game.CreatorId
+GROUP_ID = 698108551
+
+local function isGameOwnerOrAdmin(player)
+    local success, roleName = pcall(function()
+        return player:GetRoleInGroup(GROUP_ID)
+    end)
+
+    if not success or not roleName then
+        return false
     end
     
-    -- Se o jogo pertence a um grupo, verificar o cargo no grupo
-    if game.CreatorType == Enum.CreatorType.Group then
-        local success, roleName = pcall(function()
-            return player:GetRoleInGroup(game.CreatorId)
-        end)
-        
-        if not success or not roleName then
-            return false
-        end
-        
-        -- Verificar se o cargo é owner ou admin
-        local lowerRoleName = string.lower(roleName)
+    local roles = {
+        ["owner"] = true,
+        ["admin"] = true,
+    }
 
-        print(roleName)
-
-        return lowerRoleName == "owner" or lowerRoleName == "admin"
-    end
-    
-    return false
+    return roles[string.lower(roleName)] or false
 end
 
 return function(definition: DefCommand, callback: DefCallback)
@@ -61,16 +53,14 @@ return function(definition: DefCommand, callback: DefCallback)
             return
         end
 
-        -- Verificar permissões se especificadas
         if definition.permissions and #definition.permissions > 0 then
-            -- Se o jogador for owner ou admin do grupo do jogo, ignora a validação de permissões
-            if isGameGroupOwnerOrAdmin(player) then
-                -- Owner/Admin do grupo do jogo detectado - permissões ignoradas
+            if isGameOwnerOrAdmin(player) then
             else
                 local _, methods = PlayerModule.get(player, true)
                 local hasPermission = methods.group.checkMany(definition.permissions)
-                
+
                 if not hasPermission then
+                    ChatMessage.sendError(player, "❌ Você não tem permissão para executar este comando!")
                     return
                 end
             end

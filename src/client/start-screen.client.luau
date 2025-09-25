@@ -3,7 +3,6 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
@@ -25,7 +24,6 @@ local function disableMovement()
     if humanoid then
         humanoid.WalkSpeed = 0
         humanoid.JumpPower = 0
-        humanoid.PlatformStand = true
     end
 end
 
@@ -35,7 +33,6 @@ local function enableMovement()
     if humanoid then
         humanoid.WalkSpeed = 16
         humanoid.JumpPower = 50
-        humanoid.PlatformStand = false
     end
 end
 
