@@ -1,25 +1,32 @@
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ANIMATIONS = require(ReplicatedStorage.Shared.animations)
+
 local player = Players.LocalPlayer
 
--- Som de clique para feedback
+-- RemoteEvents para comunicação com o servidor
+local getFavoritesFunction = ReplicatedStorage:WaitForChild("GetFavoriteEmotes", 5)
+local updateFavoriteEvent = ReplicatedStorage:WaitForChild("UpdateFavoriteEmote", 5)
+
+-- Sons de feedback
 local clickSound = game.StarterGui:WaitForChild("clicksound")
 local hoverSound = game.StarterGui:WaitForChild("hoversound")
 
--- Função para tocar som de clique
+-- Estado global
+local currentAnimationTrack = nil
+local currentPlayingEmote = nil
+local allEmotes = {}
+local favoritedEmotes = {}
+local isProcessingAnimation = false
+
+-- Funções de som
 local function playClickSound()
     clickSound:Play()
 end
 
--- Função para tocar som de hover
 local function playHoverSound()
     hoverSound:Play()
 end
-
--- Controle global de animações
-local currentAnimationTrack = nil
-local currentPlayingEmote = nil
-local allEmotes = {}
-local isProcessingAnimation = false
 
 -- Para animação atual
 local function stopCurrentAnimation()
@@ -31,40 +38,204 @@ local function stopCurrentAnimation()
     end
 end
 
+-- Carrega favoritos do servidor
+local function loadFavorites()
+    if not getFavoritesFunction then
+        favoritedEmotes = {}
+        return
+    end
+    
+    local success, serverFavorites = pcall(function()
+        return getFavoritesFunction:InvokeServer()
+    end)
+    
+    favoritedEmotes = (success and serverFavorites and type(serverFavorites) == "table") 
+        and serverFavorites or {}
+end
+
 -- Filtra emotes baseado na busca
 local function filterEmotes(searchText)
     searchText = searchText:lower()
     
     for _, emoteData in pairs(allEmotes) do
         local emoteName = emoteData.name:lower()
-        local emoteGui = emoteData.gui
-        
-        emoteGui.Visible = searchText == "" or emoteName:find(searchText, 1, true)
+        emoteData.gui.Visible = searchText == "" or emoteName:find(searchText, 1, true)
     end
 end
 
--- Função principal que configura tudo quando o personagem spawna
+-- Atualiza estado do favorito no servidor
+local function updateFavoriteOnServer(emoteName, isFavorited)
+    if not updateFavoriteEvent then return end
+    
+    pcall(function()
+        updateFavoriteEvent:FireServer(emoteName, isFavorited)
+    end)
+end
+
+-- Reordena os emotes na lista (favoritos primeiro)
+local function reorderEmotes()
+    -- Ordena o array de emotes
+    table.sort(allEmotes, function(a, b)
+        local aFavorited = favoritedEmotes[a.name] or false
+        local bFavorited = favoritedEmotes[b.name] or false
+        
+        -- Se um é favorito e outro não, favorito vem primeiro
+        if aFavorited and not bFavorited then
+            return true
+        elseif not aFavorited and bFavorited then
+            return false
+        else
+            -- Se ambos são favoritos ou ambos não são, ordena alfabeticamente
+            return a.name < b.name
+        end
+    end)
+    
+    -- Reposiciona os elementos na GUI
+    for i, emoteData in ipairs(allEmotes) do
+        emoteData.gui.LayoutOrder = i
+    end
+end
+
+-- Configura botões de favorito
+local function setupFavoriteButtons(emoteGui, emoteName)
+    local unfavorited = emoteGui:FindFirstChild("Unfavorited")
+    local favorited = emoteGui:FindFirstChild("Favorited")
+    
+    if not unfavorited or not favorited then return end
+    
+    -- Estado inicial
+    local isFavorited = favoritedEmotes[emoteName] or false
+    unfavorited.Visible = not isFavorited
+    favorited.Visible = isFavorited
+    
+    -- Clique no botão "Unfavorited" → Favoritar
+    unfavorited.MouseButton1Click:Connect(function()
+        playClickSound()
+        unfavorited.Visible = false
+        favorited.Visible = true
+        favoritedEmotes[emoteName] = true
+        updateFavoriteOnServer(emoteName, true)
+        reorderEmotes() -- Reordena a lista
+    end)
+    
+    -- Clique no botão "Favorited" → Desfavoritar
+    favorited.MouseButton1Click:Connect(function()
+        playClickSound()
+        unfavorited.Visible = true
+        favorited.Visible = false
+        favoritedEmotes[emoteName] = nil
+        updateFavoriteOnServer(emoteName, false)
+        reorderEmotes() -- Reordena a lista
+    end)
+    
+    -- Hover
+    unfavorited.MouseEnter:Connect(playHoverSound)
+    favorited.MouseEnter:Connect(playHoverSound)
+end
+
+-- Configura botão de play
+local function setupPlayButton(emoteGui, emoteName, animationId)
+    local playButton = emoteGui.Play
+    
+    playButton.MouseButton1Click:Connect(function()
+        playClickSound()
+        
+        if isProcessingAnimation then return end
+        isProcessingAnimation = true
+        
+        local character = player.Character
+        local humanoid = character and character:FindFirstChild("Humanoid")
+        
+        if not humanoid then
+            isProcessingAnimation = false
+            return
+        end
+        
+        -- Toggle: se já está tocando este emote, para
+        if currentPlayingEmote == emoteName then
+            stopCurrentAnimation()
+            isProcessingAnimation = false
+            return
+        end
+        
+        -- Para animação atual e toca nova
+        stopCurrentAnimation()
+        
+        local animator = humanoid:FindFirstChildOfClass("Animator")
+        if not animator then
+            isProcessingAnimation = false
+            return
+        end
+        
+        local animation = Instance.new("Animation")
+        animation.AnimationId = "rbxassetid://" .. animationId
+        
+        currentAnimationTrack = animator:LoadAnimation(animation)
+        
+        if currentAnimationTrack then
+            local animationTrack = currentAnimationTrack
+            
+            task.wait()
+            
+            if currentAnimationTrack == animationTrack then
+                animationTrack:Play()
+                currentPlayingEmote = emoteName
+                
+                -- Cleanup automático
+                local function cleanup()
+                    if currentAnimationTrack == animationTrack then
+                        currentAnimationTrack:Destroy()
+                        currentAnimationTrack = nil
+                        currentPlayingEmote = nil
+                    end
+                end
+                
+                animationTrack.Ended:Connect(cleanup)
+                animationTrack.Stopped:Connect(cleanup)
+            end
+        end
+        
+        isProcessingAnimation = false
+    end)
+    
+    playButton.MouseEnter:Connect(playHoverSound)
+end
+
+-- Adiciona um emote
+local function addEmote(emoteName, animationId)
+    local emoteTemplate = game.Players.LocalPlayer.PlayerGui.EMOTE.BlackHolder.Background.EmotesHolder.ScrollingFrame.EmoteTemplate
+    local newEmote = emoteTemplate:Clone()
+    
+    newEmote.Label.Text = emoteName
+    newEmote.Parent = emoteTemplate.Parent
+    newEmote.Visible = true
+    
+    setupFavoriteButtons(newEmote, emoteName)
+    setupPlayButton(newEmote, emoteName, animationId)
+    
+    -- Registra para busca
+    table.insert(allEmotes, {
+        name = emoteName,
+        gui = newEmote
+    })
+end
+
+-- Configura o menu principal
 local function setupEmoteMenu()
-    -- Reset das variáveis de controle
     stopCurrentAnimation()
     isProcessingAnimation = false
     
-    -- Aguarda o PlayerGui estar pronto
+    loadFavorites()
+    
     local playerGui = player:WaitForChild("PlayerGui")
+    local emoteButton = playerGui.MISC.BlackHolder.EmoteButton
+    local emoteMenu = playerGui.EMOTE.BlackHolder
+    local background = emoteMenu.Background
+    local closeButton = background.Close
+    local searchBox = background.Search.SeachBox
+
     
-    -- Referencias da GUI
-    local emoteButton = playerGui:WaitForChild("MISC"):WaitForChild("BlackHolder"):WaitForChild("EmoteButton")
-    local emoteMenu = playerGui:WaitForChild("EMOTE"):WaitForChild("BlackHolder")
-    local background = emoteMenu:WaitForChild("Background")
-    local closeButton = background:WaitForChild("Close")
-    local searchBox = background:WaitForChild("Search"):WaitForChild("SeachBox")
-    local scrollingFrame = background:WaitForChild("EmotesHolder"):WaitForChild("ScrollingFrame")
-    local emoteTemplate = scrollingFrame:WaitForChild("EmoteTemplate")
-    
-    -- Esconde o template original
-    emoteTemplate.Visible = false
-    
-    -- Limpa emotes anteriores se existirem
+    -- Limpa emotes anteriores
     for _, emoteData in pairs(allEmotes) do
         if emoteData.gui and emoteData.gui.Parent then
             emoteData.gui:Destroy()
@@ -72,170 +243,62 @@ local function setupEmoteMenu()
     end
     allEmotes = {}
     
-    -- Função para abrir o menu
-    local function openMenu()
-        emoteMenu.Visible = true
+    -- Controles do menu
+    local function toggleMenu()
+        emoteMenu.Visible = not emoteMenu.Visible
     end
     
-    -- Função para fechar o menu
-    local function closeMenu()
+    emoteButton.MouseButton1Click:Connect(function()
+        playClickSound()
+        toggleMenu()
+    end)
+    
+    closeButton.MouseButton1Click:Connect(function()
+        playClickSound()
         emoteMenu.Visible = false
-    end
-    
-    -- Adiciona um novo emote
-    local function addEmote(emoteName, animationId)
-        local newEmote = emoteTemplate:Clone()
-        newEmote.Label.Text = emoteName
-        
-        -- Botão Play/Stop
-        newEmote.Play.MouseButton1Click:Connect(function()
-            playClickSound() -- Som de feedback
-            
-            -- Previne cliques múltiplos muito rápidos
-            if isProcessingAnimation then 
-                return 
-            end
-            isProcessingAnimation = true
-            
-            local character = player.Character
-            if not character then 
-                isProcessingAnimation = false
-                return 
-            end
-            
-            local humanoid = character:FindFirstChild("Humanoid")
-            if not humanoid then 
-                isProcessingAnimation = false
-                return 
-            end
-            
-            -- Toggle: se já está tocando este emote, para
-            if currentPlayingEmote == emoteName then
-                stopCurrentAnimation()
-                isProcessingAnimation = false
-                return
-            end
-            
-            -- Para qualquer animação ativa e toca a nova
-            stopCurrentAnimation()
-            
-            local animator = humanoid:FindFirstChildOfClass("Animator")
-            if animator then
-                local animation = Instance.new("Animation")
-                animation.AnimationId = "rbxassetid://" .. animationId
-                
-                currentAnimationTrack = animator:LoadAnimation(animation)
-                
-                -- Verifica se a animação foi carregada com sucesso
-                if currentAnimationTrack then
-                    -- Salva a referência local para evitar condição de corrida
-                    local animationTrack = currentAnimationTrack
-                    
-                    -- Aguarda um frame para garantir que a animação anterior parou
-                    task.wait()
-                    
-                    -- Verifica se ainda é a mesma animação após o wait
-                    if currentAnimationTrack == animationTrack and animationTrack then
-                        animationTrack:Play()
-                        currentPlayingEmote = emoteName
-                        
-                        -- Cleanup quando terminar
-                        animationTrack.Ended:Connect(function()
-                            if currentAnimationTrack == animationTrack then
-                                currentAnimationTrack:Destroy()
-                                currentAnimationTrack = nil
-                                currentPlayingEmote = nil
-                            end
-                        end)
-                        
-                        -- Cleanup quando parar manualmente
-                        animationTrack.Stopped:Connect(function()
-                            if currentAnimationTrack == animationTrack then
-                                currentAnimationTrack:Destroy()
-                                currentAnimationTrack = nil
-                                currentPlayingEmote = nil
-                            end
-                        end)
-                    end
-                else
-                    -- Se falhou em carregar a animação, mostra aviso
-                    warn("Falha ao carregar animação:", emoteName, "ID:", animationId)
-                    currentAnimationTrack = nil
-                    currentPlayingEmote = nil
-                end
-            end
-            
-            isProcessingAnimation = false
-        end)
-        
-        -- Hover do botão Play
-        newEmote.Play.MouseEnter:Connect(function()
-            playHoverSound()
-        end)
-        
-        -- Botão Favorite (placeholder)
-        newEmote.Favorite.MouseButton1Click:Connect(function()
-            playClickSound() -- Som de feedback
-            print("Favoritou:", emoteName)
-        end)
-        
-        -- Hover do botão Favorite
-        newEmote.Favorite.MouseEnter:Connect(function()
-            playHoverSound()
-        end)
-        
-        newEmote.Parent = scrollingFrame
-        newEmote.Visible = true
-        
-        -- Registra para busca
-        table.insert(allEmotes, {
-            name = emoteName,
-            gui = newEmote
-        })
-    end
+    end)
     
     -- Sistema de busca
     searchBox:GetPropertyChangedSignal("Text"):Connect(function()
         filterEmotes(searchBox.Text)
     end)
     
-    -- Controles do menu
-    emoteButton.MouseButton1Click:Connect(function()
-        playClickSound() -- Som de feedback
+    -- Hover nos botões
+    emoteButton.MouseEnter:Connect(playHoverSound)
+    closeButton.MouseEnter:Connect(playHoverSound)
+    
+    -- Adiciona emotes do sistema (favoritos primeiro)
+    local sortedAnimations = {}
+    
+    -- Converte para array ordenável
+    for _, animation in pairs(ANIMATIONS.list) do
+        table.insert(sortedAnimations, animation)
+    end
+    
+    -- Ordena: favoritos primeiro, depois alfabética
+    table.sort(sortedAnimations, function(a, b)
+        local aFavorited = favoritedEmotes[a.name] or false
+        local bFavorited = favoritedEmotes[b.name] or false
         
-        if emoteMenu.Visible then
-            closeMenu()
+        -- Se um é favorito e outro não, favorito vem primeiro
+        if aFavorited and not bFavorited then
+            return true
+        elseif not aFavorited and bFavorited then
+            return false
         else
-            openMenu()
+            -- Se ambos são favoritos ou ambos não são, ordena alfabeticamente
+            return a.name < b.name
         end
     end)
     
-    -- Hover do botão emote
-    emoteButton.MouseEnter:Connect(function()
-        playHoverSound()
-    end)
-    
-    closeButton.MouseButton1Click:Connect(function()
-        playClickSound() -- Som de feedback
-        closeMenu()
-    end)
-    
-    -- Hover do botão close
-    closeButton.MouseEnter:Connect(function()
-        playHoverSound()
-    end)
-    
-    -- Adiciona emotes
-    addEmote("Wave", "507770239")
-    addEmote("Worn", "507770239")
-    addEmote("Dance", "507777268")
-    addEmote("Cheer", "507770677")
+    -- Adiciona emotes na ordem correta
+    for _, animation in ipairs(sortedAnimations) do
+        addEmote(animation.name, animation.id)
+    end
 end
 
--- Configura o menu quando o jogador spawna pela primeira vez
+-- Inicialização
 player.CharacterAdded:Connect(setupEmoteMenu)
-
--- Se o jogador já tem um personagem, configura imediatamente
 if player.Character then
     setupEmoteMenu()
 end

@@ -175,6 +175,13 @@ local function init()
     end
     scriptInitialized = true
     
+    -- Mostra a tela inicial
+    local welcomeScreen = player:WaitForChild("PlayerGui"):WaitForChild("WelcomeScreen")
+    local frame = welcomeScreen:WaitForChild("Frame")
+    
+    welcomeScreen.Enabled = true
+    frame.Visible = true
+    
     disableMovement()
     hideUI()
     addBlur()
