@@ -137,23 +137,23 @@ end
 
 -- Esconde tela inicial
 local function hideStartScreen()
-    local menu = player:WaitForChild("PlayerGui"):WaitForChild("Menu")
-    local frame = menu:FindFirstChild("Frame") or menu
+    local welcomeScreen = player:WaitForChild("PlayerGui"):WaitForChild("WelcomeScreen")
+    local frame = welcomeScreen:FindFirstChild("Frame")
     
-    if frame:IsA("Frame") or frame:IsA("ImageLabel") then
+    if frame and (frame:IsA("Frame") or frame:IsA("ImageLabel")) then
         local tween = TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
             BackgroundTransparency = 1
         })
         tween:Play()
         tween.Completed:Connect(function()
-            menu.Enabled = false
+            welcomeScreen.Enabled = false
             uiActive = false
             enableMovement()
             showUI()
             restoreCamera()
         end)
     else
-        menu.Enabled = false
+        welcomeScreen.Enabled = false
         uiActive = false
         enableMovement()
         showUI()
@@ -163,7 +163,7 @@ end
 
 -- Conecta botão play
 local function connectPlayButton()
-    local playButton = player:WaitForChild("PlayerGui"):WaitForChild("Menu"):WaitForChild("Frame"):WaitForChild("main"):WaitForChild("play")
+    local playButton = player:WaitForChild("PlayerGui"):WaitForChild("WelcomeScreen"):WaitForChild("Frame"):WaitForChild("TextButton")
     playButton.MouseButton1Click:Connect(hideStartScreen)
 end
 

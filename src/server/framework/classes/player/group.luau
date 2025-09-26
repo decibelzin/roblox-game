@@ -136,14 +136,48 @@ return function(cache: PLAYER_DEFINITION.DefPlayerSchema)
         local frame        = Instance.new("Frame")
         local label        = Instance.new("TextLabel")
 
+        -- Buscar a cabeça do personagem
+        local head = character:FindFirstChild("Head")
+        if not head then
+            warn("⚠️ Cabeça não encontrada para o jogador:", cache.player.Name)
+            return
+        end
+
         billboardGui.Name             = "GroupTag"
-        billboardGui.Size             = UDim2.new(1, 0, 1, 0)
+        billboardGui.Size             = UDim2.new(1, 0, 1, 0)  -- Tamanho fixo em pixels
         billboardGui.Brightness       = 4
         billboardGui.MaxDistance      = 50
-        billboardGui.StudsOffset      = Vector3.new(0, 2.5, 0)
+        billboardGui.StudsOffset      = Vector3.new(0, 1.8, 0)    -- Menor offset pois está na cabeça
         billboardGui.LightInfluence   = 0
         billboardGui.AlwaysOnTop      = false
-        billboardGui.Parent           = character
+        billboardGui.Adornee          = head                      -- Anexar diretamente à cabeça
+        billboardGui.Parent           = character                 -- Parent no character (sobrevive ao copyskin)
+        
+        -- Monitorar mudanças na cabeça para recriar a tag se necessário
+        local function updateAdornee()
+            local newHead = character:FindFirstChild("Head")
+            if newHead and newHead ~= billboardGui.Adornee then
+                billboardGui.Adornee = newHead
+            end
+        end
+        
+        -- Conectar ao evento de mudança de filhos para detectar nova cabeça
+        local headConnection
+        headConnection = character.ChildAdded:Connect(function(child)
+            if child.Name == "Head" and child:IsA("BasePart") then
+                wait(0.1) -- Pequena espera para garantir que a cabeça esteja totalmente carregada
+                updateAdornee()
+            end
+        end)
+        
+        -- Limpar conexão quando a tag for destruída
+        billboardGui.AncestryChanged:Connect(function()
+            if not billboardGui.Parent then
+                if headConnection then
+                    headConnection:Disconnect()
+                end
+            end
+        end)
 
         frame.Size                   = UDim2.new(1, 0, 1, 0)
         frame.BackgroundTransparency = 1
