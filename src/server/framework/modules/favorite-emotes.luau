@@ -7,6 +7,12 @@ local Players = game:GetService("Players")
 local favoriteEmotesStore = DataStoreService:GetDataStore(STORAGE_KEY)
 local playerFavorites = {} -- Cache: userId -> {emoteIndex -> true}
 
+-- Otimizações de performance
+local pendingSaves = {} -- userId -> true (jogadores com alterações pendentes)
+local saveDebounce = {} -- userId -> number (timestamp da última tentativa)
+local SAVE_DEBOUNCE_TIME = 3 -- segundos entre salvamentos
+local BATCH_SAVE_INTERVAL = 10 -- salvar alterações pendentes a cada 10 segundos
+
 -- RemoteEvents
 local getFavoritesEvent = Instance.new("RemoteFunction")
 getFavoritesEvent.Name = "GetFavoriteEmotes"
@@ -41,19 +47,42 @@ function FavoriteEmotesModule.loadPlayerFavorites(player)
     return favoriteSet
 end
 
--- Salva favoritos no DataStore
-function FavoriteEmotesModule.savePlayerFavorites(player)
-    local favoriteSet = playerFavorites[player.UserId] or {}
+-- Salva favoritos no DataStore (otimizado)
+function FavoriteEmotesModule.savePlayerFavorites(player, forceImmediate)
+    local userId = player.UserId
+    local favoriteSet = playerFavorites[userId] or {}
     
-    -- Converte set para array
+    -- Debouncing: evita salvamentos muito frequentes
+    local currentTime = tick()
+    if not forceImmediate and saveDebounce[userId] then
+        local timeSinceLastSave = currentTime - saveDebounce[userId]
+        if timeSinceLastSave < SAVE_DEBOUNCE_TIME then
+            -- Marca para salvamento posterior
+            pendingSaves[userId] = true
+            return false
+        end
+    end
+    
+    -- Remove da lista de pendentes
+    pendingSaves[userId] = nil
+    saveDebounce[userId] = currentTime
+    
+    -- Converte set para array (otimizado)
     local favoriteArray = {}
+    local count = 0
     for index in pairs(favoriteSet) do
-        table.insert(favoriteArray, index)
+        count = count + 1
+        favoriteArray[count] = index
     end
     
     local success = pcall(function()
-        favoriteEmotesStore:SetAsync(tostring(player.UserId), favoriteArray)
+        favoriteEmotesStore:SetAsync(tostring(userId), favoriteArray)
     end)
+    
+    if not success then
+        -- Re-adiciona à lista de pendentes em caso de erro
+        pendingSaves[userId] = true
+    end
     
     return success
 end
@@ -67,7 +96,7 @@ function FavoriteEmotesModule.getPlayerFavorites(player)
     return playerFavorites[player.UserId] or {}
 end
 
--- Atualiza favorito
+-- Atualiza favorito (otimizado)
 function FavoriteEmotesModule.updateEmoteFavorite(player, emoteName, isFavorited)
     -- Validações
     if not player or not emoteName or type(emoteName) ~= "string" or emoteName == "" then
@@ -89,6 +118,12 @@ function FavoriteEmotesModule.updateEmoteFavorite(player, emoteName, isFavorited
         playerFavorites[player.UserId] = {}
     end
     
+    -- Verifica se houve mudança real
+    local currentState = playerFavorites[player.UserId][emoteIndex] == true
+    if currentState == isFavorited then
+        return true -- Não há mudança, evita operação desnecessária
+    end
+    
     -- Atualiza cache
     if isFavorited then
         playerFavorites[player.UserId][emoteIndex] = true
@@ -96,13 +131,39 @@ function FavoriteEmotesModule.updateEmoteFavorite(player, emoteName, isFavorited
         playerFavorites[player.UserId][emoteIndex] = nil
     end
     
-    -- Salva assíncronamente
+    -- Marca para salvamento com debounce
+    pendingSaves[player.UserId] = true
+    
+    -- Tenta salvar com debounce
     task.spawn(function()
-        FavoriteEmotesModule.savePlayerFavorites(player)
+        FavoriteEmotesModule.savePlayerFavorites(player, false)
     end)
     
     return true
 end
+
+-- Sistema de batch saving para salvamentos pendentes
+local function processPendingSaves()
+    for userId in pairs(pendingSaves) do
+        local player = Players:GetPlayerByUserId(userId)
+        if player then
+            task.spawn(function()
+                FavoriteEmotesModule.savePlayerFavorites(player, true)
+            end)
+        else
+            -- Remove jogadores desconectados da lista
+            pendingSaves[userId] = nil
+        end
+    end
+end
+
+-- Timer para batch saving
+task.spawn(function()
+    while true do
+        task.wait(BATCH_SAVE_INTERVAL)
+        processPendingSaves()
+    end
+end)
 
 -- Configura RemoteEvents
 getFavoritesEvent.OnServerInvoke = function(player)
@@ -124,11 +185,19 @@ updateFavoriteEvent.OnServerEvent:Connect(function(player, emoteName, isFavorite
     FavoriteEmotesModule.updateEmoteFavorite(player, emoteName, isFavorited)
 end)
 
--- Cleanup quando jogador sai
+-- Cleanup quando jogador sai (otimizado)
 Players.PlayerRemoving:Connect(function(player)
-    if playerFavorites[player.UserId] then
-        FavoriteEmotesModule.savePlayerFavorites(player)
-        playerFavorites[player.UserId] = nil
+    local userId = player.UserId
+    
+    if playerFavorites[userId] then
+        -- Salvamento forçado e imediato na saída
+        FavoriteEmotesModule.savePlayerFavorites(player, true)
+        
+        -- Cleanup após um delay para garantir que o salvamento termine
+        task.wait(1)
+        playerFavorites[userId] = nil
+        pendingSaves[userId] = nil
+        saveDebounce[userId] = nil
     end
 end)
 

@@ -49,8 +49,7 @@ local function loadFavorites()
         return getFavoritesFunction:InvokeServer()
     end)
     
-    favoritedEmotes = (success and serverFavorites and type(serverFavorites) == "table") 
-        and serverFavorites or {}
+    favoritedEmotes = (success and serverFavorites and type(serverFavorites) == "table") and serverFavorites or {}
 end
 
 -- Filtra emotes baseado na busca

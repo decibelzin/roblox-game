@@ -2,5 +2,6 @@ return {
     group = "player.groups",
     userId = "player.userIds",
     userIdCounter = "system.userIdCounter",
-    favoriteEmotes = "player.favoriteEmotes"
+    favoriteEmotes = "player.favoriteEmotes",
+    redeemedCodes = "player.redeemedCodes"
 }
