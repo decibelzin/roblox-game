@@ -253,18 +253,6 @@ function TimePlayedClass:_updateBoard ()
 
 				-- Aplicar escalas imediatamente
 				applyScales()
-
-				-- Continuar aplicando as escalas a cada 0.5 segundos por alguns segundos
-				-- para garantir que não sejam resetadas
-				-- task.spawn(function()
-				-- 	for i = 1, 2 do -- 10 tentativas ao longo de 5 segundos
-				-- 		wait(0.5)
-				-- 		applyScales()
-				-- 		if self._doDebug then
-				-- 			print("Re-aplicando escalas (tentativa " .. i .. ")")
-				-- 		end
-				-- 	end
-				-- end)
 			end)
 		end
 	end

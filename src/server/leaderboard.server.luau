@@ -37,12 +37,12 @@ local function setupPlayerLeaderboard(player)
         groupValue.Parent = leaderstats
     end
     
-    -- Verificar se a coluna Time Played já existe
-    local timePlayedValue = leaderstats:FindFirstChild("Time Played")
+    -- Verificar se a coluna Time já existe
+    local timePlayedValue = leaderstats:FindFirstChild("Time")
     if not timePlayedValue then
-        -- Criar a coluna Time Played
+        -- Criar a coluna Time
         timePlayedValue = Instance.new("StringValue")
-        timePlayedValue.Name = "Time Played"
+        timePlayedValue.Name = "Time"
         timePlayedValue.Value = "0h 0m"
         timePlayedValue.Parent = leaderstats
     end

@@ -6,6 +6,7 @@
       "Shared": {
         "$path": "src/shared"
       },
+
       "AFKDetection": {
         "$className": "RemoteEvent"
       },
