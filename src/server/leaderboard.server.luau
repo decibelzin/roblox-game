@@ -37,6 +37,16 @@ local function setupPlayerLeaderboard(player)
         groupValue.Parent = leaderstats
     end
     
+    -- Verificar se a coluna Time Played já existe
+    local timePlayedValue = leaderstats:FindFirstChild("Time Played")
+    if not timePlayedValue then
+        -- Criar a coluna Time Played
+        timePlayedValue = Instance.new("StringValue")
+        timePlayedValue.Name = "Time Played"
+        timePlayedValue.Value = "0h 0m"
+        timePlayedValue.Parent = leaderstats
+    end
+    
     -- Função para atualizar os valores
     local function updateLeaderboard()
         -- Obter dados do jogador
@@ -57,9 +67,43 @@ local function setupPlayerLeaderboard(player)
         -- Atualizar grupo
         local highestGroup = playerClass.group.getHighestGroup()
         groupValue.Value = highestGroup or ''
+        
+        -- Atualizar tempo jogado
+        if _G.GetPlayerTimePlayed then
+            local playerTime = _G.GetPlayerTimePlayed(player)
+            if playerTime then
+                -- Formato para o leaderboard: "2h 30m" ou "45m"
+                if playerTime.totalHours >= 1 then
+                    timePlayedValue.Value = string.format("%dh %dm", playerTime.hours, playerTime.minutes)
+                else
+                    timePlayedValue.Value = string.format("%dm", playerTime.totalMinutes)
+                end
+            else
+                timePlayedValue.Value = "0m"
+            end
+        else
+            timePlayedValue.Value = "0m"
+        end
     end
 
     updateLeaderboard()
+    
+    -- Atualizar tempo jogado periodicamente
+    task.spawn(function()
+        while player.Parent do
+            wait(60) -- Atualizar a cada 1 minuto
+            if player.Parent and _G.GetPlayerTimePlayed then
+                local playerTime = _G.GetPlayerTimePlayed(player)
+                if playerTime and timePlayedValue.Parent then
+                    if playerTime.totalHours >= 1 then
+                        timePlayedValue.Value = string.format("%dh %dm", playerTime.hours, playerTime.minutes)
+                    else
+                        timePlayedValue.Value = string.format("%dm", playerTime.totalMinutes)
+                    end
+                end
+            end
+        end
+    end)
 end
 
 -- Eventos

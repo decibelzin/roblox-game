@@ -1,7 +1,21 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TextChatService = game:GetService("TextChatService")
 
 local player = Players.LocalPlayer
+
+-- Sons de feedback
+local clickSound = game.StarterGui:WaitForChild("clicksound")
+local hoverSound = game.StarterGui:WaitForChild("hoversound")
+
+-- Funções de som
+local function playClickSound()
+    clickSound:Play()
+end
+
+local function playHoverSound()
+    hoverSound:Play()
+end
 
 -- Importar lista de códigos válidos
 local redeemableCodes = require(ReplicatedStorage.Shared["redeemable-codes"])
@@ -148,18 +162,21 @@ local function setupCodeRedeemer()
     
     -- Configurar clique no botão de códigos (abrir/fechar menu)
     codeButton.MouseButton1Click:Connect(function()
+        playClickSound()
         codesMenu.Visible = not codesMenu.Visible
     end)
     
     -- Configurar clique no botão Close (fechar menu)
     if closeButton then
         closeButton.MouseButton1Click:Connect(function()
+            playClickSound()
             codesMenu.Visible = false
         end)
     end
     
     -- Configurar clique no botão de resgate
     redeemButton.MouseButton1Click:Connect(function()
+        playClickSound()
         local codeText = codeBox.Text
         
         -- Validar se o input não está vazio
@@ -181,7 +198,11 @@ local function setupCodeRedeemer()
             -- Limpar o campo de texto após envio
             codeBox.Text = ""
         else
-            -- Código inválido
+            -- Código inválido - enviar mensagem no chat usando TextChatService
+            local textChannel = TextChatService.TextChannels.RBXGeneral
+            textChannel:DisplaySystemMessage("❌ Código inválido!")
+            
+            -- Debug no console
             warn("❌ Código não encontrado ou inválido:", codeText)
             print("🔍 Debug: Códigos válidos disponíveis:")
             for validCode, _ in pairs(redeemableCodes) do
@@ -189,6 +210,13 @@ local function setupCodeRedeemer()
             end
         end
     end)
+    
+    -- Hover nos botões
+    codeButton.MouseEnter:Connect(playHoverSound)
+    redeemButton.MouseEnter:Connect(playHoverSound)
+    if closeButton then
+        closeButton.MouseEnter:Connect(playHoverSound)
+    end
 end
 
 -- Inicialização

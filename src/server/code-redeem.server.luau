@@ -98,8 +98,8 @@ local function processCodeRedeem(player: Player?, code: string)
     
     -- Verificar se o jogador já usou este código
     if hasPlayerRedeemedCode(player.UserId, code) then
-        ChatMessage.sendWarning(player, "Você já resgatou este código!")
-        codeRedeemEvent:FireClient(player, false, "Você já resgatou este código!", code)
+        ChatMessage.sendWarning(player, "Você já resgatou o código: " .. code)
+        codeRedeemEvent:FireClient(player, false, "Você já resgatou o código: " .. code, code)
         print("🔄 Debug: Jogador " .. player.Name .. " tentou resgatar código já usado: " .. code)
         return
     end

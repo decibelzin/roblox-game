@@ -402,8 +402,68 @@ function TimePlayedClass:_timeToString(_time)
 end
 
 
+-- Função para retornar as horas jogadas de um player específico
+function TimePlayedClass:getPlayerTimePlayed(player)
+	if not self._datastore then
+		if self._doDebug then
+			warn("TopTimePlayed Board: DataStore não está disponível")
+		end
+		return nil
+	end
+	
+	local userId = nil
+	if typeof(player) == "Instance" and player:IsA("Player") then
+		userId = player.UserId
+	elseif typeof(player) == "number" then
+		userId = player
+	else
+		if self._doDebug then
+			warn("TopTimePlayed Board: Parâmetro inválido. Use um Player ou UserId")
+		end
+		return nil
+	end
+	
+	local stat = self._dataStoreStatName .. userId
+	local success, timeInMinutes = pcall(function()
+		return self._datastore:GetAsync(stat)
+	end)
+	
+	if not success then
+		if self._doDebug then
+			warn("TopTimePlayed Board: Erro ao buscar tempo jogado para UserId", userId, "Erro:", timeInMinutes)
+		end
+		return nil
+	end
+	
+	-- Se não há dados salvos, retorna 0
+	if not timeInMinutes then
+		timeInMinutes = 0
+	end
+	
+	-- Converte minutos para segundos e depois calcula horas, minutos, dias
+	local timeInSeconds = timeInMinutes * 60
+	local days = math.floor(timeInSeconds / 86400)
+	local hours = math.floor(math.fmod(timeInSeconds, 86400) / 3600)
+	local minutes = math.floor(math.fmod(timeInSeconds, 3600) / 60)
+	
+	return {
+		totalMinutes = timeInMinutes,
+		totalHours = timeInMinutes / 60,
+		days = days,
+		hours = hours,
+		minutes = minutes,
+		formattedString = string.format("%02dd : %02dh : %02dm", days, hours, minutes)
+	}
+end
+
+
 -- Inicializar automaticamente quando o módulo for carregado
-TimePlayedClass.new()
+local timePlayedInstance = TimePlayedClass.new()
+
+-- Criar uma função global para facilitar o acesso
+_G.GetPlayerTimePlayed = function(player)
+	return timePlayedInstance:getPlayerTimePlayed(player)
+end
 
 -- Retornar o módulo para compatibilidade
 return TimePlayedClass
