@@ -17,21 +17,7 @@ function UserIdModule.getUsername(robloxUserId: number): string?
     if not robloxUserId or robloxUserId <= 0 then
         return nil
     end
-    
-    -- Tentativa 1: API REST do Roblox
-    local httpSuccess, httpResult = pcall(function()
-        local HttpService = game:GetService("HttpService")
-        local url = "https://users.roblox.com/v1/users/" .. robloxUserId
-        local response = HttpService:GetAsync(url)
-        local data = HttpService:JSONDecode(response)
-        return data.name
-    end)
-    
-    if httpSuccess and httpResult and httpResult ~= "" then
-        return httpResult
-    end
-    
-    -- Tentativa 2: API interna como fallback
+
     local apiSuccess, apiResult = pcall(function()
         return game:GetService("Players"):GetNameFromUserIdAsync(robloxUserId)
     end)
@@ -196,7 +182,6 @@ function UserIdModule.runDiagnostics(): {success: boolean, message: string, deta
     
     -- Verificar se o sistema está funcional
     local isHealthy = counterSuccess and userIdStoreSuccess
-    
     local message = "🔧 Diagnóstico do Sistema de User ID:\n"
     message = message .. "📊 Contador: " .. (counterSuccess and "✅ OK" or "❌ ERRO") .. "\n"
     message = message .. "🗄️ DataStore User IDs: " .. (userIdStoreSuccess and "✅ OK" or "❌ ERRO") .. "\n"

@@ -231,11 +231,15 @@ local function hideStartScreen()
         tween:Play()
         tween.Completed:Connect(function()
             welcomeScreen.Enabled = false
+            uiActive = false
+            enableMovement()
             showUI()
             cinematicTransition()
         end)
     else
         welcomeScreen.Enabled = false
+        uiActive = false
+        enableMovement()
         showUI()
         cinematicTransition()
     end
