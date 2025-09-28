@@ -152,6 +152,7 @@ local function transitionToNextPosition()
     
     if cameraTween then
         cameraTween:Cancel()
+        cameraTween = nil
     end
     
     cameraTween = TweenService:Create(camera, TweenInfo.new(10, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
