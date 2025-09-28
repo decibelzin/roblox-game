@@ -108,7 +108,6 @@ end
 
 -- Eventos
 players.PlayerAdded:Connect(function(player)
-
     player.CharacterAdded:Connect(function(character)
         wait(1) -- Aguardar o character carregar completamente
         
