@@ -18,19 +18,6 @@ function UserIdModule.getUsername(robloxUserId: number): string?
         return nil
     end
     
-    -- Tentativa 1: API REST do Roblox
-    local httpSuccess, httpResult = pcall(function()
-        local HttpService = game:GetService("HttpService")
-        local url = "https://users.roblox.com/v1/users/" .. robloxUserId
-        local response = HttpService:GetAsync(url)
-        local data = HttpService:JSONDecode(response)
-        return data.name
-    end)
-    
-    if httpSuccess and httpResult and httpResult ~= "" then
-        return httpResult
-    end
-    
     -- Tentativa 2: API interna como fallback
     local apiSuccess, apiResult = pcall(function()
         return game:GetService("Players"):GetNameFromUserIdAsync(robloxUserId)
