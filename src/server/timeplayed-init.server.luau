@@ -27,7 +27,7 @@ local success, err = pcall(function()
 end)
 
 if success then
-    print("🚀 Sistema TimePlayedLeaderboard inicializado com sucesso!")
+    --print("🚀 Sistema TimePlayedLeaderboard inicializado com sucesso!")
 else
     warn("❌ Erro ao inicializar TimePlayedLeaderboard:", err)
 end 

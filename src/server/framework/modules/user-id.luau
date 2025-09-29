@@ -36,14 +36,14 @@ local function initializeUsedIdsCache()
         return
     end
     
-    print("🔄 Inicializando cache de User IDs...")
+    --print("🔄 Inicializando cache de User IDs...")
     
     -- Obter o contador atual para saber quais IDs já foram usados
     local currentCounter = UserIdModule.getCurrentCounter() or 0
-    print("📊 Contador atual:", currentCounter, "- IDs 1 a", currentCounter, "estão em uso")
+    --print("📊 Contador atual:", currentCounter, "- IDs 1 a", currentCounter, "estão em uso")
     
     cacheInitialized = true
-    print("✅ Cache inicializado baseado no contador")
+    --print("✅ Cache inicializado baseado no contador")
 end
 
 --- Obtém o próximo ID disponível e incrementa o contador de forma atômica
@@ -107,7 +107,7 @@ function UserIdModule.getOrCreateUserId(player: Player): number?
     -- Atualizar cache
     usedIdsCache[newId] = true
     
-    print("✅ Novo User ID criado para", player.Name, "- ID:", newId)
+    --print("✅ Novo User ID criado para", player.Name, "- ID:", newId)
     return newId
 end
 
@@ -308,7 +308,7 @@ function UserIdModule.changeUserId(robloxUserId: number, newUserId: number): boo
     -- Atualizar leaderboard se jogador estiver online
     UserIdModule.updatePlayerLeaderboard(robloxUserId, newUserId)
     
-    print("✅ User ID alterado:", robloxUserId, "->", newUserId)
+    --print("✅ User ID alterado:", robloxUserId, "->", newUserId)
     return true
 end
 

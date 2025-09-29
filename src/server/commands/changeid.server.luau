@@ -82,5 +82,5 @@ RegisterCommand({
     ChatMessage.sendSuccess(player, successMessage)
     
     -- Log da operação
-    print("🔧 [ADMIN] " .. player.Name .. " alterou o User ID de " .. username .. " de " .. currentUserId .. " para " .. newUserId)
+    --print("🔧 [ADMIN] " .. player.Name .. " alterou o User ID de " .. username .. " de " .. currentUserId .. " para " .. newUserId)
 end) 

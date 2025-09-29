@@ -100,7 +100,6 @@ local function processCodeRedeem(player: Player?, code: string)
     if hasPlayerRedeemedCode(player.UserId, code) then
         ChatMessage.sendWarning(player, "Você já resgatou o código: " .. code)
         codeRedeemEvent:FireClient(player, false, "Você já resgatou o código: " .. code, code)
-        print("🔄 Debug: Jogador " .. player.Name .. " tentou resgatar código já usado: " .. code)
         return
     end
     
@@ -127,7 +126,7 @@ local function processCodeRedeem(player: Player?, code: string)
     codeRedeemEvent:FireClient(player, true, successMessage, code)
     
     -- Log do resgate
-    print("✅ Jogador " .. player.Name .. " (ID: " .. player.UserId .. ") resgatou o código: " .. code)
+    --print("✅ Jogador " .. player.Name .. " (ID: " .. player.UserId .. ") resgatou o código: " .. code)
 end
 
 -- Conectar evento de resgate

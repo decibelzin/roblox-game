@@ -31,14 +31,14 @@ local REWARDS = {
 local function giveGems(player: Player, amount: number)
     -- Aqui você implementaria a lógica para dar gemas
     -- Exemplo: player.leaderstats.Gems.Value = player.leaderstats.Gems.Value + amount
-    print("Dando", amount, "gemas para", player.Name)
+    --print("Dando", amount, "gemas para", player.Name)
 end
 
 -- Função para dar experiência ao jogador
 local function giveExperience(player: Player, amount: number)
     -- Aqui você implementaria a lógica para dar XP
     -- Exemplo: player.leaderstats.XP.Value = player.leaderstats.XP.Value + amount
-    print("Dando", amount, "XP para", player.Name)
+    --print("Dando", amount, "XP para", player.Name)
 end
 
 -- Função para dar itens ao jogador

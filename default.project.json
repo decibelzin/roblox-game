@@ -18,6 +18,9 @@
       },
       "CodeRedeemEvent": {
         "$className": "RemoteEvent"
+      },
+      "SkinUpdateEvent": {
+        "$className": "RemoteEvent"
       }
     },
     "ServerScriptService": {

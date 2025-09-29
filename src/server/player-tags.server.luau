@@ -18,7 +18,7 @@ local function applyPlayerTags(player)
     if playerData.userId and type(playerData.userId) == "number" and playerData.userId > 0 then
         userIdText = " [ID: " .. playerData.userId .. "]"
     end
-    print(player.Name .. userIdText .. (' (%s) entrou no servidor'):format(highestGroup or 'Nenhum'))
+    --print(player.Name .. userIdText .. (' (%s) entrou no servidor'):format(highestGroup or 'Nenhum'))
     
     -- Criar tag no servidor
     playerClass.group.updateServerTag()

@@ -1,6 +1,15 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared['register-command'])
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Criar evento para notificar mudanças de skin
+local skinUpdateEvent = ReplicatedStorage:FindFirstChild("SkinUpdateEvent")
+if not skinUpdateEvent then
+    skinUpdateEvent = Instance.new("RemoteEvent")
+    skinUpdateEvent.Name = "SkinUpdateEvent"
+    skinUpdateEvent.Parent = ReplicatedStorage
+end
 
 local HEADLESS_HEAD_ID = 15093053680
 
@@ -52,13 +61,13 @@ RegisterCommand({
     if not humanoid then return end
     
     local humanoidDescription = humanoid:GetAppliedDescription()
-    local isHeadless = humanoidDescription.Head == HEADLESS_HEAD_ID
     
-    if isHeadless then
+    if humanoidDescription.Head == HEADLESS_HEAD_ID then
         RemoveHeadless(character)
-        humanoid:SetAttribute("Headless", false)
     else
         EquipHeadless(character)
-        humanoid:SetAttribute("Headless", true)
     end
+    
+    -- Notificar o client que a skin foi alterada
+    skinUpdateEvent:FireClient(player)
 end)

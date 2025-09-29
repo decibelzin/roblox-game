@@ -4,22 +4,16 @@ local AnimationsModule = {
         [1] = {
             name = "Wave",
             id = "507770239",
-            category = "greeting",
+            category = "dance",
             rarity = "common"
         },
         [2] = {
-            name = "Worn", 
-            id = "507770239",
-            category = "idle",
-            rarity = "common"
-        },
-        [3] = {
             name = "Dance",
             id = "507777268", 
             category = "dance",
             rarity = "common"
         },
-        [4] = {
+        [3] = {
             name = "Cheer",
             id = "507770677",
             category = "celebration", 
@@ -28,31 +22,11 @@ local AnimationsModule = {
     },
     
     -- Mapeamento reverso para busca rápida por nome
-    nameToIndex = {
+    nameToIndex = { 
         ["Wave"] = 1,
-        ["Worn"] = 2, 
-        ["Dance"] = 3,
-        ["Cheer"] = 4
+        ["Dance"] = 2, 
+        ["Cheer"] = 3
     },
-    
-    -- Categorias para organização
-    categories = {
-        "greeting",
-        "idle", 
-        "dance",
-        "celebration",
-        "combat",
-        "social"
-    },
-    
-    -- Raridades para futuras funcionalidades
-    rarities = {
-        "common",
-        "uncommon", 
-        "rare",
-        "epic",
-        "legendary"
-    }
 }
 
 -- Funções auxiliares para facilitar o uso

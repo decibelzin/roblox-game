@@ -1,6 +1,15 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared['register-command'])
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Criar evento para notificar mudanças de skin
+local skinUpdateEvent = ReplicatedStorage:FindFirstChild("SkinUpdateEvent")
+if not skinUpdateEvent then
+    skinUpdateEvent = Instance.new("RemoteEvent")
+    skinUpdateEvent.Name = "SkinUpdateEvent"
+    skinUpdateEvent.Parent = ReplicatedStorage
+end
 
 RegisterCommand({
     name = "copyskin",
@@ -29,4 +38,7 @@ RegisterCommand({
     local myHumanoid = player.Character.Humanoid
 
     myHumanoid:ApplyDescription(description)
+    
+    -- Notificar o client que a skin foi alterada
+    skinUpdateEvent:FireClient(player)
 end)
