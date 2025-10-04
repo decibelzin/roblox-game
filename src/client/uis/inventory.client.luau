@@ -9,12 +9,35 @@ local hoverSound = StarterGui:WaitForChild("hoversound", 5)
 
 local INVENTORY_TOGGLE_KEY = Enum.KeyCode.Backquote
 
+-- Importar config de itens (shared)
+local ITEMS_MODULE = require(ReplicatedStorage.Shared.itens)
+local ITEMS_CONFIG = ITEMS_MODULE.list
+
 -- RemoteEvents para sistema de itens
 local getPlayerItemsFunction = ReplicatedStorage:WaitForChild("GetPlayerItems", 10)
 local updatePlayerItemsEvent = ReplicatedStorage:WaitForChild("UpdatePlayerItems", 10)
 
 -- Cache local dos itens do jogador
 local playerItems = {} -- {itemId -> {item: itemConfig, quantity: number}}
+
+-- Combina dados do servidor (IDs e quantidades) com config local
+local function combineItemsWithConfig(serverItems)
+    local combined = {}
+    
+    for itemId, quantity in pairs(serverItems) do
+        local itemConfig = ITEMS_CONFIG[itemId]
+        if itemConfig then
+            combined[itemId] = {
+                item = itemConfig,
+                quantity = quantity
+            }
+        else
+            warn("⚠️ Item ID " .. itemId .. " não encontrado na config!")
+        end
+    end
+    
+    return combined
+end
 
 -- Carrega itens do servidor
 local function loadPlayerItems()
@@ -23,12 +46,13 @@ local function loadPlayerItems()
         return
     end
     
-    local success, items = pcall(function()
+    local success, serverItems = pcall(function()
         return getPlayerItemsFunction:InvokeServer()
     end)
     
-    if success and items and type(items) == "table" then
-        playerItems = items
+    if success and serverItems and type(serverItems) == "table" then
+        -- Combinar dados do servidor com config local
+        playerItems = combineItemsWithConfig(serverItems)
     else
         warn("⚠️ Erro ao carregar itens do jogador")
         playerItems = {}
@@ -54,15 +78,14 @@ local function updateTooltipContent(tooltip, slot)
     
     local itemData = playerItems[itemId]
     local itemName = itemData.item.name or "Item #" .. itemId
-    local quantity = itemData.quantity or 0
     
     if title and title:IsA("TextLabel") then
-        title.Text = itemName .. " x" .. quantity
+        title.Text = itemName
     end
     
     if description and description:IsA("TextLabel") then
         -- Você pode adicionar descrição nos itens futuramente
-        description.Text = "ID: " .. itemId .. " | Quantidade: " .. quantity
+        description.Text = itemData.item.description
     end
 end
 
@@ -95,14 +118,18 @@ local function createItemSlots(scrollingFrame)
         local quantity = itemData.quantity or 0
         
         -- Se o slot tiver um TextLabel para quantidade
-        local quantityLabel = newSlot:FindFirstChild("Quantity")
-        if quantityLabel and quantityLabel:IsA("TextLabel") then
-            quantityLabel.Text = "x" .. quantity
+        local itemQuantityLabel = newSlot:FindFirstChild("ItemQuantity")
+        if itemQuantityLabel and itemQuantityLabel:IsA("TextLabel") then
+            itemQuantityLabel.Text = tostring(quantity)..'x'
         end
         
-        -- Se o slot tiver cor configurada
+        -- Se o slot tiver cor configurada, aplicar no UIGradient
         if itemData.item.color then
-            newSlot.BackgroundColor3 = itemData.item.color
+            local uiGradient = newSlot:FindFirstChild("UIGradient")
+            if uiGradient and uiGradient:IsA("UIGradient") then
+                -- Aplicar cor no gradient (ajuste o ColorSequence conforme necessário)
+                uiGradient.Color = ColorSequence.new(itemData.item.color)
+            end
         end
         
         newSlot.Parent = scrollingFrame
@@ -164,13 +191,13 @@ local function setupSlotTooltips(scrollingFrame, tooltip)
 end
 
 -- Atualiza o inventário quando recebe update do servidor
-local function onItemsUpdated(items)
-    if not items or type(items) ~= "table" then
+local function onItemsUpdated(serverItems)
+    if not serverItems or type(serverItems) ~= "table" then
         return
     end
     
-    -- Atualizar cache local
-    playerItems = items
+    -- Combinar dados do servidor com config local e atualizar cache
+    playerItems = combineItemsWithConfig(serverItems)
     
     -- Recriar slots visuais
     local playerGui = player:FindFirstChild("PlayerGui")

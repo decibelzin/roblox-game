@@ -1,6 +1,7 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"])
 local ChatMessage = require(game.ServerScriptService.Server.framework.modules["chat-message"])
-local ITEMS_CONFIG = require(game.ReplicatedStorage.Shared.itens)
+local ITEMS_MODULE = require(game.ReplicatedStorage.Shared.itens)
+local ITEMS_CONFIG = ITEMS_MODULE.list
 
 RegisterCommand({
     name = "itemlist",

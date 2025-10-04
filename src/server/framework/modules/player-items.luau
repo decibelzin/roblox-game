@@ -1,5 +1,6 @@
 local STORAGE_KEY = require(game.ReplicatedStorage.Shared.storage).playerItems
-local ITEMS_CONFIG = require(game.ReplicatedStorage.Shared.itens)
+local ITEMS_MODULE = require(game.ReplicatedStorage.Shared.itens)
+local ITEMS_CONFIG = ITEMS_MODULE.list
 local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -117,7 +118,7 @@ function PlayerItemsModule.addItem(player: Player, itemId: number, quantity: num
     local success = PlayerItemsModule.savePlayerItems(player)
     
     if success then
-        -- Notificar cliente
+        -- Notificar cliente apenas com IDs e quantidades (cliente tem a config em shared)
         updatePlayerItemsEvent:FireClient(player, playerItems)
     end
     
@@ -156,7 +157,7 @@ function PlayerItemsModule.removeItem(player: Player, itemId: number, quantity: 
     local success = PlayerItemsModule.savePlayerItems(player)
     
     if success then
-        -- Notificar cliente
+        -- Notificar cliente apenas com IDs e quantidades (cliente tem a config em shared)
         updatePlayerItemsEvent:FireClient(player, playerItems)
     end
     
@@ -192,7 +193,7 @@ function PlayerItemsModule.setItem(player: Player, itemId: number, quantity: num
     local success = PlayerItemsModule.savePlayerItems(player)
     
     if success then
-        -- Notificar cliente
+        -- Notificar cliente apenas com IDs e quantidades (cliente tem a config em shared)
         updatePlayerItemsEvent:FireClient(player, playerItems)
     end
     
@@ -229,6 +230,7 @@ function PlayerItemsModule.clearAllItems(player: Player): boolean
     local success = PlayerItemsModule.savePlayerItems(player)
     
     if success then
+        -- Notificar cliente com tabela vazia (mas no formato correto)
         updatePlayerItemsEvent:FireClient(player, {})
     end
     
@@ -255,7 +257,8 @@ end
 
 --- Configurar RemoteFunction para obter itens
 getPlayerItemsEvent.OnServerInvoke = function(player: Player)
-    return PlayerItemsModule.getPlayerItemsWithInfo(player)
+    -- Retorna apenas IDs e quantidades (cliente tem a config em shared)
+    return PlayerItemsModule.getPlayerItems(player)
 end
 
 --- Carregar itens quando jogador entra

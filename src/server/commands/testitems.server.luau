@@ -1,8 +1,9 @@
 local RegisterCommand = require(game.ReplicatedStorage.Shared["register-command"])
-local Players = game:GetService("Players")
 local ChatMessage = require(game.ServerScriptService.Server.framework.modules["chat-message"])
 local PlayerItemsModule = require(game.ServerScriptService.Server.framework.modules["player-items"])
-local ITEMS_CONFIG = require(game.ReplicatedStorage.Shared.itens)
+local PlayerModule = require(game.ServerScriptService.Server.framework.modules.player)()
+local ITEMS_MODULE = require(game.ReplicatedStorage.Shared.itens)
+local ITEMS_CONFIG = ITEMS_MODULE.list
 
 RegisterCommand({
     name = "testitems",
@@ -10,23 +11,19 @@ RegisterCommand({
     aliases = { "testinv" },
     permissions = { "owner", "admin" }
 }, function(player, params, message)
-    local username = params[1] or player.Name
+    local userId = tonumber(params[1])
+    local targetPlayer
     
-    -- Buscar jogador
-    local targetPlayer = player
-    if username ~= player.Name then
-        local success, targetUserId = pcall(function()
-            return Players:GetUserIdFromNameAsync(username)
-        end)
-        
-        if not success then
-            ChatMessage.sendError(player, "❌ Usuário '" .. username .. "' não encontrado!")
-            return
-        end
-        
-        targetPlayer = Players:GetPlayerByUserId(targetUserId)
+    -- Se não passar ID, dá para si mesmo
+    if not userId then
+        targetPlayer = player
+        local playerData, _ = PlayerModule.get(player, false)
+        userId = playerData and playerData.userId or 0
+    else
+        -- Buscar jogador pelo User ID customizado
+        targetPlayer = PlayerModule.getPlayerByUserId(userId)
         if not targetPlayer then
-            ChatMessage.sendError(player, "❌ Usuário '" .. username .. "' não está online!")
+            ChatMessage.sendError(player, "❌ Jogador com User ID " .. userId .. " não está online!")
             return
         end
     end
@@ -42,7 +39,7 @@ RegisterCommand({
     end
     
     if itemsGiven > 0 then
-        ChatMessage.sendSuccess(player, "✅ " .. itemsGiven .. " tipo(s) de item adicionado(s) ao inventário de " .. targetPlayer.Name .. "!")
+        ChatMessage.sendSuccess(player, "✅ " .. itemsGiven .. " tipo(s) de item adicionado(s) ao inventário de " .. targetPlayer.Name .. " [ID: " .. userId .. "]!")
         if targetPlayer ~= player then
             ChatMessage.sendSuccess(targetPlayer, "🎁 Você recebeu itens de teste no inventário!")
         end
