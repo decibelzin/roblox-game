@@ -3,5 +3,6 @@ return {
     userId = "player.userIds",
     userIdCounter = "system.userIdCounter",
     favoriteEmotes = "player.favoriteEmotes",
-    redeemedCodes = "player.redeemedCodes"
+    redeemedCodes = "player.redeemedCodes",
+    playerItems = "player.items"
 }

@@ -43,7 +43,8 @@ return function()
             return {
                 player = player,
                 groups = {},
-                userId = 0
+                userId = 0,
+                items = {}
             }
         end
         
@@ -76,7 +77,8 @@ return function()
         local data: PLAYER_DEFINITION.DefPlayerSchema = {
             player = player,
             groups = groups,
-            userId = userId
+            userId = userId,
+            items = {} -- Itens são gerenciados separadamente pelo player-items module
         }
 
         -- Só enviar para cliente se for um player real e online
