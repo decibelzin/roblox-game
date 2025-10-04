@@ -1,4 +1,6 @@
-local STORAGE_KEY = require(game.ReplicatedStorage.Shared.storage).playerItems
+local STORAGE_DEFINITIONS = require(game.ReplicatedStorage.Shared.storage)
+local STORAGE_KEY = STORAGE_DEFINITIONS.playerItems
+local ORDER_STORAGE_KEY = STORAGE_DEFINITIONS.itemsOrder
 local ITEMS_MODULE = require(game.ReplicatedStorage.Shared.itens)
 local ITEMS_CONFIG = ITEMS_MODULE.list
 local DataStoreService = game:GetService("DataStoreService")
@@ -6,7 +8,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 local playerItemsStore = DataStoreService:GetDataStore(STORAGE_KEY)
+local itemsOrderStore = DataStoreService:GetDataStore(ORDER_STORAGE_KEY)
 local playerItemsCache = {} -- Cache: userId -> {itemId -> quantidade}
+local playerOrderCache = {} -- Cache: userId -> {itemId -> posição}
 
 -- RemoteEvents
 local getPlayerItemsEvent = Instance.new("RemoteFunction")
@@ -16,6 +20,10 @@ getPlayerItemsEvent.Parent = ReplicatedStorage
 local updatePlayerItemsEvent = Instance.new("RemoteEvent")
 updatePlayerItemsEvent.Name = "UpdatePlayerItems"
 updatePlayerItemsEvent.Parent = ReplicatedStorage
+
+local reorderItemsEvent = Instance.new("RemoteEvent")
+reorderItemsEvent.Name = "ReorderItems"
+reorderItemsEvent.Parent = ReplicatedStorage
 
 local PlayerItemsModule = {}
 
@@ -255,17 +263,93 @@ function PlayerItemsModule.getPlayerItemsWithInfo(player: Player): {[number]: {i
     return itemsWithInfo
 end
 
+--- Carrega a ordem dos itens do jogador do DataStore
+function PlayerItemsModule.loadPlayerOrder(player: Player): {[number]: number}
+    local userId = tostring(player.UserId)
+    
+    local success, order = pcall(function()
+        return itemsOrderStore:GetAsync(userId)
+    end)
+    
+    local playerOrder = {}
+    
+    if success and order and type(order) == "table" then
+        playerOrder = order
+    end
+    
+    playerOrderCache[player.UserId] = playerOrder
+    return playerOrder
+end
+
+--- Salva a ordem dos itens do jogador no DataStore
+function PlayerItemsModule.savePlayerOrder(player: Player): boolean
+    local userId = player.UserId
+    local order = playerOrderCache[userId] or {}
+    
+    local success = pcall(function()
+        itemsOrderStore:SetAsync(tostring(userId), order)
+    end)
+    
+    if not success then
+        warn("❌ Erro ao salvar ordem de itens para jogador:", player.Name)
+    end
+    
+    return success
+end
+
+--- Obtém a ordem dos itens do jogador (com cache)
+function PlayerItemsModule.getPlayerOrder(player: Player): {[number]: number}
+    if not playerOrderCache[player.UserId] then
+        PlayerItemsModule.loadPlayerOrder(player)
+    end
+    
+    return playerOrderCache[player.UserId] or {}
+end
+
+--- Reordena os itens do jogador
+function PlayerItemsModule.reorderItems(player: Player, newOrder: {[number]: number}): boolean
+    if not newOrder or type(newOrder) ~= "table" then
+        warn("❌ Ordem de itens inválida")
+        return false
+    end
+    
+    -- Validar que todos os itemIds na ordem existem no inventário do jogador
+    local playerItems = PlayerItemsModule.getPlayerItems(player)
+    for itemId, position in pairs(newOrder) do
+        if not playerItems[itemId] then
+            warn("❌ Tentativa de reordenar item que o jogador não possui:", itemId)
+            return false
+        end
+        if type(position) ~= "number" or position < 0 then
+            warn("❌ Posição inválida para item:", itemId)
+            return false
+        end
+    end
+    
+    -- Atualizar cache
+    playerOrderCache[player.UserId] = newOrder
+    
+    -- Salvar no DataStore
+    return PlayerItemsModule.savePlayerOrder(player)
+end
+
 --- Configurar RemoteFunction para obter itens
 getPlayerItemsEvent.OnServerInvoke = function(player: Player)
     -- Retorna apenas IDs e quantidades (cliente tem a config em shared)
     return PlayerItemsModule.getPlayerItems(player)
 end
 
---- Carregar itens quando jogador entra
+--- Conectar RemoteEvent de reordenar
+reorderItemsEvent.OnServerEvent:Connect(function(player, newOrder)
+    PlayerItemsModule.reorderItems(player, newOrder)
+end)
+
+--- Carregar itens e ordem quando jogador entra
 Players.PlayerAdded:Connect(function(player)
     task.spawn(function()
         PlayerItemsModule.loadPlayerItems(player)
-        print("✅ Itens carregados para:", player.Name)
+        PlayerItemsModule.loadPlayerOrder(player)
+        print("✅ Itens e ordem carregados para:", player.Name)
     end)
 end)
 
@@ -273,8 +357,10 @@ end)
 Players.PlayerRemoving:Connect(function(player)
     if playerItemsCache[player.UserId] then
         PlayerItemsModule.savePlayerItems(player)
+        PlayerItemsModule.savePlayerOrder(player)
         task.wait(0.5) -- Garantir que salvou
         playerItemsCache[player.UserId] = nil
+        playerOrderCache[player.UserId] = nil
     end
 end)
 

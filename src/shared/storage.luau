@@ -4,5 +4,6 @@ return {
     userIdCounter = "system.userIdCounter",
     favoriteEmotes = "player.favoriteEmotes",
     redeemedCodes = "player.redeemedCodes",
-    playerItems = "player.items"
+    playerItems = "player.items",
+    itemsOrder = "player.itemsOrder"
 }

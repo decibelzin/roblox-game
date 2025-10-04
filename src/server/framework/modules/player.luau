@@ -44,7 +44,8 @@ return function()
                 player = player,
                 groups = {},
                 userId = 0,
-                items = {}
+                items = {},
+                itemsOrder = {}
             }
         end
         
@@ -78,7 +79,8 @@ return function()
             player = player,
             groups = groups,
             userId = userId,
-            items = {} -- Itens são gerenciados separadamente pelo player-items module
+            items = {}, -- Itens são gerenciados separadamente pelo player-items module
+            itemsOrder = {} -- Ordem dos itens gerenciada separadamente
         }
 
         -- Só enviar para cliente se for um player real e online
