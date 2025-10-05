@@ -29,16 +29,10 @@ end
 
 -- Conectar para receber feedback do servidor sobre códigos
 codeRedeemEvent.OnClientEvent:Connect(function(success, message, code)
-    if success then
-        print("✅ Código resgatado com sucesso:", code)
-        print("🎁 " .. message)
+    if success then 
     else
-        if message:find("já resgatou") then
-            warn("⚠️ Código já resgatado:", code)
-            print("🔄 Debug: Este código já foi usado anteriormente")
-        else
-            warn("❌ Erro ao resgatar código:", code)
-            print("💬 " .. message)
+        if message:find("já resgatou") then 
+        else 
         end
     end
 end)
@@ -97,8 +91,7 @@ local function setupCodeRedeemer()
     if not codeBox then
         warn("CodeBox não encontrado em CODES.BlackHolder! Elementos disponíveis:")
         local function printChildren(parent, indent)
-            for _, child in ipairs(parent:GetChildren()) do
-                print(indent .. "- " .. child.Name .. " (" .. child.ClassName .. ")")
+            for _, child in ipairs(parent:GetChildren()) do 
                 if child:IsA("GuiObject") and #child:GetChildren() > 0 then
                     printChildren(child, indent .. "  ")
                 end
@@ -151,15 +144,8 @@ local function setupCodeRedeemer()
     end
     
     if closeButton and (closeButton:IsA("TextButton") or closeButton:IsA("ImageButton")) then
-        print("✅ Botão Close encontrado:", closeButton:GetFullName())
-    else
-        warn("Botão Close não encontrado ou não é um botão!")
-    end
-    
-    print("✅ Interface de códigos configurada com sucesso!")
-    print("  - CodeBox encontrado:", codeBox:GetFullName())
-    print("  - Botão de resgate encontrado:", redeemButton:GetFullName())
-    
+     else
+     end 
     -- Configurar clique no botão de códigos (abrir/fechar menu)
     codeButton.MouseButton1Click:Connect(function()
         playClickSound()
@@ -191,8 +177,7 @@ local function setupCodeRedeemer()
         
         -- Verificar se o código existe na lista de códigos válidos
         if redeemableCodes[codeText] then
-            -- Código válido, enviar para o servidor
-            print("📤 Enviando código válido para o servidor:", codeText)
+            -- Código válido, enviar para o servidor 
             codeRedeemEvent:FireServer(codeText)
             
             -- Limpar o campo de texto após envio
@@ -201,13 +186,7 @@ local function setupCodeRedeemer()
             -- Código inválido - enviar mensagem no chat usando TextChatService
             local textChannel = TextChatService.TextChannels.RBXGeneral
             textChannel:DisplaySystemMessage("❌ Código inválido!")
-            
-            -- Debug no console
-            warn("❌ Código não encontrado ou inválido:", codeText)
-            print("🔍 Debug: Códigos válidos disponíveis:")
-            for validCode, _ in pairs(redeemableCodes) do
-                print("  - " .. validCode)
-            end
+             
         end
     end)
     

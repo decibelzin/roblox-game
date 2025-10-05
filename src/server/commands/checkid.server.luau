@@ -66,7 +66,7 @@ RegisterCommand({
         end
         
         -- Log da operação
-        print("🔍 [CHECKID] " .. player.Name .. " verificou o User ID " .. userId .. " - Status: " .. (isInUse and "EM USO" or "DISPONÍVEL"))
+        -- print("🔍 [CHECKID] " .. player.Name .. " verificou o User ID " .. userId .. " - Status: " .. (isInUse and "EM USO" or "DISPONÍVEL"))
     else
         -- Input é um username - buscar o User ID dessa pessoa
         local username = input
@@ -108,6 +108,6 @@ RegisterCommand({
         end
         
         -- Log da operação
-        print("🔍 [CHECKID] " .. player.Name .. " consultou o User ID de " .. username .. " - ID: " .. (userIdFound or "Não encontrado"))
+        -- print("🔍 [CHECKID] " .. player.Name .. " consultou o User ID de " .. username .. " - ID: " .. (userIdFound or "Não encontrado"))
     end
 end) 

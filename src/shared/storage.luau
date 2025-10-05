@@ -5,5 +5,6 @@ return {
     favoriteEmotes = "player.favoriteEmotes",
     redeemedCodes = "player.redeemedCodes",
     playerItems = "player.items",
-    itemsOrder = "player.itemsOrder"
+    itemsOrder = "player.itemsOrder",
+    hotbarItems = "player.hotbarItems"  -- Configuração da hotbar do jogador
 }

@@ -1,7 +1,7 @@
 -- TimePlayedLeaderboard System
 -- Este script inicializa o sistema de leaderboard de tempo jogado
 
-print("🎯 Iniciando sistema TimePlayedLeaderboard...")
+-- print("🎯 Iniciando sistema TimePlayedLeaderboard...")
 
 -- Verificar se o model existe no Workspace
 local timePlayedModel = workspace:WaitForChild("TimePlayedLeaderboard", 10)
@@ -10,7 +10,7 @@ if not timePlayedModel then
     return
 end
 
-print("✅ Model TimePlayedLeaderboard encontrado no Workspace")
+--print("✅ Model TimePlayedLeaderboard encontrado no Workspace")
 
 -- Verificar componentes essenciais
 local scoreBlock = timePlayedModel:FindFirstChild("ScoreBlock")
@@ -19,7 +19,7 @@ if not scoreBlock then
     return
 end
 
-print("✅ ScoreBlock encontrado")
+--print("✅ ScoreBlock encontrado")
 
 -- Inicializar o sistema
 local success, err = pcall(function()

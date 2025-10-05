@@ -136,8 +136,7 @@ codeRedeemEvent.OnServerEvent:Connect(processCodeRedeem)
 Players.PlayerAdded:Connect(function(player)
     -- Carregar dados em background para cache
     task.spawn(function()
-        playerCodesCache[player.UserId] = loadPlayerRedeemedCodes(player.UserId)
-        print("Códigos resgatados carregados para:", player.Name)
+        playerCodesCache[player.UserId] = loadPlayerRedeemedCodes(player.UserId) 
     end)
 end)
 
@@ -147,5 +146,4 @@ Players.PlayerRemoving:Connect(function(player)
         playerCodesCache[player.UserId] = nil
     end
 end)
-
-print("Sistema de resgate de códigos inicializado com DataStore persistente!") 
+ 

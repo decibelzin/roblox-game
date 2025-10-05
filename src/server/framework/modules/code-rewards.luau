@@ -45,7 +45,7 @@ end
 local function giveItems(player: Player, items: {string})
     -- Aqui você implementaria a lógica para dar itens
     for _, item in ipairs(items) do
-        print("Dando item", item, "para", player.Name)
+        -- print("Dando item", item, "para", player.Name)
     end
 end
 

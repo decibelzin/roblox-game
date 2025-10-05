@@ -69,7 +69,7 @@ RegisterCommand({
         local playerData, playerClass = PlayerModule.get(targetPlayer, false)
         if playerData and playerClass then
             playerData.userId = newUserId
-            print("🔄 Cache atualizado para jogador online:", targetPlayer.Name)
+            -- print("🔄 Cache atualizado para jogador online:", targetPlayer.Name)
         end
     end
 
