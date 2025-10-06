@@ -137,10 +137,9 @@ function InventorySlot:onMouseUp()
 end
 
 function InventorySlot:onMouseEnter()
-    -- Tooltip (apenas para slots com item)
-    if not self.inventory.isDragging and not self.isEmpty then
+    -- Som de hover
+    if not self.isEmpty then
         if shared.hoverSound then shared.hoverSound:Play() end
-        self.inventory:showTooltip(self)
     end
     
     -- Registrar qual slot está sendo "hovered" durante o drag (não faz swap ainda!)
@@ -150,10 +149,6 @@ function InventorySlot:onMouseEnter()
 end
 
 function InventorySlot:onMouseLeave()
-    if not self.inventory.isDragging and not self.isEmpty then
-        self.inventory:hideTooltip(self)
-    end
-    
     -- Limpar hoveredSlot quando sair
     if self.inventory.isDragging and self.inventory.hoveredSlot == self then
         self.inventory.hoveredSlot = nil

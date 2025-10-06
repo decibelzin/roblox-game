@@ -15,9 +15,8 @@ function Inventory.new()
     
     -- Referências de UI (cache)
     self.container = nil
-    self.background = nil  -- Background do inventário (é isso que escondemos/mostramos)
+    self.myInventory = nil  -- Background do inventário (é isso que escondemos/mostramos)
     self.scrollingFrame = nil
-    self.tooltip = nil
     self.itemSlotTemplate = nil  -- Template para slots com item
     self.emptySlotTemplate = nil  -- Template para slots vazios
     self.parentGui = nil
@@ -41,9 +40,6 @@ function Inventory.new()
     -- Input type (detecta automaticamente se está usando touch ou mouse)
     self.isMobile = shared.IS_MOBILE
     
-    -- Tooltip state
-    self.currentTooltipSlot = nil
-    self.tooltipHideTask = nil
     
     -- Save order debounce (evitar spam ao DataStore)
     self.saveOrderTask = nil
@@ -78,16 +74,14 @@ function Inventory:initialize()
     self.container = inventoryGui:FindFirstChild("container")
     if not self.container then return warn("Container não encontrado!") end
     
-    self.background = self.container:FindFirstChild("background")
-    if not self.background then return warn("Background não encontrado!") end
+    self.myInventory = self.container:FindFirstChild("myInventory")
+    if not self.myInventory then return warn("Background não encontrado!") end
     
-    self.scrollingFrame = self.background:FindFirstChild("ScrollingFrame")
-    self.tooltip = self.background:FindFirstChild("ItemInfoTooltip")
-    local closeButton = self.background:FindFirstChild("Close")
+    self.scrollingFrame = self.myInventory:FindFirstChild("ScrollingFrame")
+    -- local closeButton = self.myInventory:FindFirstChild("Close")
     
     if not self.scrollingFrame then return warn("ScrollingFrame não encontrado!") end
-    if not self.tooltip then return warn("ItemInfoTooltip não encontrado!") end
-    if not closeButton then return warn("Close button não encontrado!") end
+    -- if not closeButton then return warn("Close button não encontrado!") end
     
     self.itemSlotTemplate = self.scrollingFrame:FindFirstChild("itemSlot")
     self.emptySlotTemplate = self.scrollingFrame:FindFirstChild("emptySlot")
@@ -98,10 +92,9 @@ function Inventory:initialize()
     self.itemSlotTemplate.Visible = false
     self.emptySlotTemplate.Visible = false
     
-    -- Esconder apenas o background, não o container (hotbar fica visível)
-    self.background.Visible = false
-    self.tooltip.Visible = false
-    
+    -- Esconder apenas o myInventory, não o container (hotbar fica visível)
+    self.myInventory.Visible = false
+
     -- Preparar ghost cache (usa itemSlot como base)
     GhostSlotCache.prepare(self.itemSlotTemplate, self.parentGui)
     
@@ -112,7 +105,7 @@ function Inventory:initialize()
     self:setupInputTypeDetection()
     
     -- Conectar eventos
-    self:connectEvents(closeButton)
+    self:connectEvents()
     
     return true
 end
@@ -505,7 +498,7 @@ function Inventory:moveToHotbar(inventorySlot, hotbarSlotIndex)
     local itemIdOriginal = inventorySlot.itemId  -- Manter original (string) para playerItems
     local itemIdNum = type(itemIdOriginal) == "string" and tonumber(itemIdOriginal) or itemIdOriginal
     
-    local itemConfig = shared.ITEMS_CONFIG[itemIdNum]
+    local _itemConfig = shared.ITEMS_CONFIG[itemIdNum]
     
     -- Verificar se item pode ir para hotbar (usa itemIdNum para ITEMS_CONFIG)
     if not self.hotbar:canReceiveItem(itemIdNum) then
@@ -563,7 +556,7 @@ function Inventory:moveToHotbar(inventorySlot, hotbarSlotIndex)
     -- 3. Enviar ao servidor (servidor é a fonte da verdade, vai corrigir se houver erro)
     -- Usar itemIdNum (número) para o servidor
     if shared.setHotbarSlotEvent then
-        local success, err = pcall(function()
+        local success, _err = pcall(function()
             shared.setHotbarSlotEvent:FireServer(hotbarSlotIndex, itemIdNum, quantity)
         end)
         
@@ -694,57 +687,28 @@ function Inventory:saveOrder()
     end)
 end
 
-function Inventory:showTooltip(slot)
-    self.currentTooltipSlot = slot
-    
-    if self.tooltipHideTask then
-        task.cancel(self.tooltipHideTask)
-        self.tooltipHideTask = nil
-    end
-    
-    local title = self.tooltip:FindFirstChild("title")
-    local description = self.tooltip:FindFirstChild("description")
-    
-    if title then title.Text = slot.itemData.item.name or "Item #" .. slot.itemId end
-    if description then description.Text = slot.itemData.item.description or "" end
-    
-    self.tooltip.Visible = true
-end
 
-function Inventory:hideTooltip(slot)
-    if self.currentTooltipSlot ~= slot then return end
-    
-    self.currentTooltipSlot = nil
-    
-    if self.tooltipHideTask then task.cancel(self.tooltipHideTask) end
-    self.tooltipHideTask = task.delay(0.1, function()
-        if not self.currentTooltipSlot then
-            self.tooltip.Visible = false
-        end
-        self.tooltipHideTask = nil
-    end)
-end
 
 function Inventory:connectEvents(closeButton)
     -- Close button
-    closeButton.MouseButton1Click:Connect(function()
-        if shared.clickSound then shared.clickSound:Play() end
-        self.background.Visible = false
-        shared.enableNativeUI()
-    end)
+    -- closeButton.MouseButton1Click:Connect(function()
+    --     if shared.clickSound then shared.clickSound:Play() end
+    --     self.myInventory.Visible = false
+    --     shared.enableNativeUI()
+    -- end)
     
-    closeButton.MouseEnter:Connect(function()
-        if shared.hoverSound then shared.hoverSound:Play() end
-    end)
+    -- closeButton.MouseEnter:Connect(function()
+    --     if shared.hoverSound then shared.hoverSound:Play() end
+    -- end)
     
     -- Toggle key
     table.insert(self.connections, shared.UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed or input.KeyCode ~= shared.INVENTORY_TOGGLE_KEY then return end
         
         if shared.clickSound then shared.clickSound:Play() end
-        self.background.Visible = not self.background.Visible
+        self.myInventory.Visible = not self.myInventory.Visible
         
-        if self.background.Visible then
+        if self.myInventory.Visible then
             shared.disableNativeUI()
         else
             shared.enableNativeUI()
@@ -810,10 +774,6 @@ function Inventory:destroy()
         self.ghostUpdateConnection = nil
     end
     
-    if self.tooltipHideTask then
-        task.cancel(self.tooltipHideTask)
-        self.tooltipHideTask = nil
-    end
     
     if self.saveOrderTask then
         task.cancel(self.saveOrderTask)

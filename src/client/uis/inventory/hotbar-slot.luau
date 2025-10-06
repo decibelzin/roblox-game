@@ -127,10 +127,9 @@ function HotbarSlot:onClick()
 end
 
 function HotbarSlot:onMouseEnter()
-    -- Mostrar tooltip apenas se tiver item e não estiver arrastando
-    if not self.isEmpty and not self.hotbarManager.inventory.isDragging then
+    -- Som de hover
+    if not self.isEmpty then
         if shared.hoverSound then shared.hoverSound:Play() end
-        self.hotbarManager.inventory:showTooltip(self)
     end
     
     -- Detectar hover durante drag (SEMPRE, mesmo para slots vazios)
@@ -140,10 +139,6 @@ function HotbarSlot:onMouseEnter()
 end
 
 function HotbarSlot:onMouseLeave()
-    if not self.isEmpty and not self.hotbarManager.inventory.isDragging then
-        self.hotbarManager.inventory:hideTooltip(self)
-    end
-    
     if self.hotbarManager.inventory.isDragging and self.hotbarManager.hoveredSlot == self then
         self.hotbarManager.hoveredSlot = nil
     end
